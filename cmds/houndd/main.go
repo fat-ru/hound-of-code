@@ -147,7 +147,7 @@ func main() {
 	}
 
 	// Start the web server on a background routine.
-	ws := web.Start(&cfg, *flagAddr, *flagDev)
+	ws := web.StartWithConfigFile(&cfg, *flagConf, *flagAddr, *flagDev)
 
 	// It's not safe to be killed during makeSearchers, so register the
 	// shutdown signal here and defer processing it until we are ready.

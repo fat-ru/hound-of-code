@@ -92,6 +92,21 @@ var Model = {
         return Object.keys(this.repos).length;
     },
 
+    LoadRepos: function () {
+        var _this = this;
+        reqwest({
+            url: "api/v1/repos",
+            type: "json",
+            success: function (data) {
+                _this.repos = data;
+                _this.didLoadRepos.raise(_this, data);
+            },
+            error: function (xhr, status, err) {
+                _this.didError.raise(_this, "Failed to load repositories");
+            }
+        });
+    },
+
     Load: function () {
         var _this = this;
         var next = function () {
@@ -292,6 +307,148 @@ var RepoOption = React.createClass({
             </option>
         );
     },
+});
+
+var RepoConfigForm = React.createClass({
+    getInitialState: function () {
+        return {
+            showForm: false,
+            name: "",
+            url: "",
+            branch: "",
+            error: "",
+            loading: false
+        };
+    },
+    showForm: function () {
+        this.setState({ showForm: true, error: "" });
+    },
+    hideForm: function () {
+        this.setState({ showForm: false, name: "", url: "", branch: "", error: "" });
+    },
+    handleSubmit: function (e) {
+        e.preventDefault();
+        var _this = this;
+        
+        if (!this.state.name || !this.state.url) {
+            this.setState({ error: "Name and URL are required" });
+            return;
+        }
+
+        this.setState({ loading: true, error: "" });
+
+        reqwest({
+            url: "api/v1/repos/add",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+                name: this.state.name,
+                url: this.state.url,
+                branch: this.state.branch || ""
+            }),
+            type: "json",
+            success: function (data) {
+                _this.setState({ loading: false, showForm: false, name: "", url: "", branch: "" });
+                // Reload repos
+                Model.LoadRepos();
+                // Show success message (you could add a toast notification here)
+                alert("Repository added successfully!");
+            },
+            error: function (xhr, status, err) {
+                var errorMsg = "Failed to add repository";
+                try {
+                    var errorData = JSON.parse(xhr.responseText);
+                    if (errorData.Error) {
+                        errorMsg = errorData.Error;
+                    }
+                } catch (e) {
+                    // Use default error message
+                }
+                _this.setState({ loading: false, error: errorMsg });
+            }
+        });
+    },
+    render: function () {
+        if (!this.state.showForm) {
+            return (
+                <button 
+                    className="config-button" 
+                    onClick={this.showForm}
+                    title="Add Repository"
+                >
+                    <span className="octicon octicon-plus"></span> Add Repository
+                </button>
+            );
+        }
+
+        return (
+            <div className="repo-config-form">
+                <div className="form-header">
+                    <h3>Add Repository</h3>
+                    <button className="close-button" onClick={this.hideForm}>
+                        <span className="octicon octicon-x"></span>
+                    </button>
+                </div>
+                <form onSubmit={this.handleSubmit}>
+                    {this.state.error ? (
+                        <div className="error-message">{this.state.error}</div>
+                    ) : null}
+                    <div className="field">
+                        <label htmlFor="repo-name">Repository Name *</label>
+                        <input
+                            type="text"
+                            id="repo-name"
+                            value={this.state.name}
+                            onChange={function(e) { this.setState({name: e.target.value}); }.bind(this)}
+                            placeholder="e.g., MyRepo"
+                            required
+                            disabled={this.state.loading}
+                        />
+                    </div>
+                    <div className="field">
+                        <label htmlFor="repo-url">Repository URL *</label>
+                        <input
+                            type="text"
+                            id="repo-url"
+                            value={this.state.url}
+                            onChange={function(e) { this.setState({url: e.target.value}); }.bind(this)}
+                            placeholder="e.g., https://github.com/user/repo.git"
+                            required
+                            disabled={this.state.loading}
+                        />
+                    </div>
+                    <div className="field">
+                        <label htmlFor="repo-branch">Branch (optional)</label>
+                        <input
+                            type="text"
+                            id="repo-branch"
+                            value={this.state.branch}
+                            onChange={function(e) { this.setState({branch: e.target.value}); }.bind(this)}
+                            placeholder="e.g., main, master"
+                            disabled={this.state.loading}
+                        />
+                    </div>
+                    <div className="form-actions">
+                        <button 
+                            type="submit" 
+                            className="submit-button"
+                            disabled={this.state.loading}
+                        >
+                            {this.state.loading ? "Adding..." : "Add Repository"}
+                        </button>
+                        <button 
+                            type="button" 
+                            className="cancel-button"
+                            onClick={this.hideForm}
+                            disabled={this.state.loading}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        );
+    }
 });
 
 var SearchBar = React.createClass({
@@ -501,6 +658,9 @@ var SearchBar = React.createClass({
 
         return (
             <div id="input">
+                <div className="search-header">
+                    <RepoConfigForm />
+                </div>
                 <div id="ina">
                     <input
                         id="q"

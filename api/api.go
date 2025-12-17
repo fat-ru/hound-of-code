@@ -15,6 +15,14 @@ import (
 	"github.com/hound-search/hound/searcher"
 )
 
+// SearcherProvider provides access to searchers
+type SearcherProvider interface {
+	GetSearchers() map[string]*searcher.Searcher
+	AddSearcher(name string, s *searcher.Searcher)
+	GetConfig() *config.Config
+	GetConfigFile() string
+}
+
 const (
 	defaultLinesOfContext uint = 2
 	maxLinesOfContext     uint = 20
@@ -174,8 +182,13 @@ func parseRangeValue(rv string) (int, int) {
 	return b, e
 }
 
-func Setup(m *http.ServeMux, idx map[string]*searcher.Searcher, defaultMaxResults int) {
+func Setup(m *http.ServeMux, provider SearcherProvider, defaultMaxResults int) {
+	getIdx := func() map[string]*searcher.Searcher {
+		return provider.GetSearchers()
+	}
+
 	m.HandleFunc("/api/v1/repos", func(w http.ResponseWriter, r *http.Request) {
+		idx := getIdx()
 		res := map[string]*config.Repo{}
 		for name, srch := range idx {
 			res[name] = srch.Repo
@@ -185,6 +198,7 @@ func Setup(m *http.ServeMux, idx map[string]*searcher.Searcher, defaultMaxResult
 	})
 
 	m.HandleFunc("/api/v1/search", func(w http.ResponseWriter, r *http.Request) {
+		idx := getIdx()
 		var opt index.SearchOptions
 
 		stats := parseAsBool(r.FormValue("stats"))
@@ -233,8 +247,14 @@ func Setup(m *http.ServeMux, idx map[string]*searcher.Searcher, defaultMaxResult
 	})
 
 	m.HandleFunc("/api/v1/excludes", func(w http.ResponseWriter, r *http.Request) {
+		idx := getIdx()
 		repo := r.FormValue("repo")
-		res := idx[repo].GetExcludedFiles()
+		searcher := idx[repo]
+		if searcher == nil {
+			writeError(w, fmt.Errorf("No such repository: %s", repo), http.StatusNotFound)
+			return
+		}
+		res := searcher.GetExcludedFiles()
 		w.Header().Set("Content-Type", "application/json;charset=utf-8")
 		w.Header().Set("Access-Control-Allow", "*")
 		fmt.Fprint(w, res)
@@ -248,6 +268,7 @@ func Setup(m *http.ServeMux, idx map[string]*searcher.Searcher, defaultMaxResult
 			return
 		}
 
+		idx := getIdx()
 		repos := parseAsRepoList(r.FormValue("repos"), idx)
 
 		for _, repo := range repos {
@@ -269,6 +290,106 @@ func Setup(m *http.ServeMux, idx map[string]*searcher.Searcher, defaultMaxResult
 		}
 
 		writeResp(w, "ok")
+	})
+
+	m.HandleFunc("/api/v1/repos/add", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			writeError(w,
+				errors.New(http.StatusText(http.StatusMethodNotAllowed)),
+				http.StatusMethodNotAllowed)
+			return
+		}
+
+		var req struct {
+			Name   string `json:"name"`
+			Url    string `json:"url"`
+			Branch string `json:"branch"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeError(w, fmt.Errorf("Invalid request: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		if req.Name == "" || req.Url == "" {
+			writeError(w, errors.New("name and url are required"), http.StatusBadRequest)
+			return
+		}
+
+		idx := getIdx()
+		if idx[req.Name] != nil {
+			writeError(w, fmt.Errorf("Repository %s already exists", req.Name), http.StatusConflict)
+			return
+		}
+
+		cfg := provider.GetConfig()
+		if cfg == nil {
+			writeError(w, errors.New("Config not available"), http.StatusInternalServerError)
+			return
+		}
+
+		// Create new repo config
+		repo := &config.Repo{
+			Url: req.Url,
+			Vcs: "git",
+		}
+
+		// Set branch if provided
+		if req.Branch != "" {
+			vcsConfig := map[string]interface{}{
+				"ref": req.Branch,
+			}
+			vcsConfigBytes, err := json.Marshal(vcsConfig)
+			if err != nil {
+				writeError(w, fmt.Errorf("Failed to create vcs config: %v", err), http.StatusInternalServerError)
+				return
+			}
+			secretMsg := config.SecretMessage(vcsConfigBytes)
+			repo.VcsConfigMessage = &secretMsg
+		}
+
+		// Initialize repo with defaults
+		config.InitRepo(repo)
+
+		// Add to config
+		if cfg.Repos == nil {
+			cfg.Repos = make(map[string]*config.Repo)
+		}
+		cfg.Repos[req.Name] = repo
+
+		// Save config file
+		configFile := provider.GetConfigFile()
+		if configFile == "" {
+			configFile = "config.json"
+		}
+		if err := cfg.SaveToFile(configFile); err != nil {
+			writeError(w, fmt.Errorf("Failed to save config: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		// Create new searcher
+		newSearcher, err := searcher.New(cfg.DbPath, req.Name, repo)
+		if err != nil {
+			writeError(w, fmt.Errorf("Failed to create searcher: %v", err), http.StatusInternalServerError)
+			// Remove from config on error
+			delete(cfg.Repos, req.Name)
+			cfg.SaveToFile(configFile)
+			return
+		}
+
+		// Add searcher to server
+		provider.AddSearcher(req.Name, newSearcher)
+
+		// Trigger update
+		if !newSearcher.Update() {
+			// If update fails, log but don't fail the request
+			log.Printf("Warning: Failed to trigger update for repository %s", req.Name)
+		}
+
+		writeResp(w, map[string]string{
+			"status": "ok",
+			"message": fmt.Sprintf("Repository %s added successfully", req.Name),
+		})
 	})
 
 	m.HandleFunc("/api/v1/github-webhook", func(w http.ResponseWriter, r *http.Request) {
@@ -298,7 +419,7 @@ func Setup(m *http.ServeMux, idx map[string]*searcher.Searcher, defaultMaxResult
 		}
 
 		repo := h.Repository.Full_name
-
+		idx := getIdx()
 		searcher := idx[h.Repository.Full_name]
 
 		if searcher == nil {

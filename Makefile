@@ -1,3 +1,4 @@
+# ------------------变量区域-------------------------
 CMDS := .build/bin/houndd .build/bin/hound
 
 SRCS := $(shell find . -type f -name '*.go')
@@ -7,7 +8,9 @@ WEBPACK_ARGS := --mode production
 ifdef DEBUG
 	WEBPACK_ARGS := --mode development
 endif
+# ------------------变量区域-------------------------
 
+# ------------------目标区域-------------------------
 ALL: $(CMDS)
 
 ui: ui/.build/ui
@@ -44,3 +47,4 @@ lint:
 
 clean:
 	rm -rf .build ui/.build node_modules
+# ------------------目标区域-------------------------

@@ -96,7 +96,7 @@ func (r *Repo) VcsConfig() []byte {
 }
 
 // Populate missing config values with default values.
-func initRepo(r *Repo) {
+func InitRepo(r *Repo) {
 	if r.MsBetweenPolls == 0 {
 		r.MsBetweenPolls = defaultMsBetweenPoll
 	}
@@ -213,7 +213,7 @@ func (c *Config) LoadFromFile(filename string) error {
 	}
 
 	for _, repo := range c.Repos {
-		initRepo(repo)
+		InitRepo(repo)
 	}
 
 	return initConfig(c)
@@ -226,4 +226,34 @@ func (c *Config) ToJsonString() (string, error) {
 	}
 
 	return string(b), nil
+}
+
+// SaveToFile saves the config to a JSON file.
+func (c *Config) SaveToFile(filename string) error {
+	// Create a temporary file first for atomic write
+	tmpFile := filename + ".tmp"
+	
+	w, err := os.Create(tmpFile)
+	if err != nil {
+		return err
+	}
+	defer w.Close()
+
+	encoder := json.NewEncoder(w)
+	encoder.SetIndent("", "    ")
+	if err := encoder.Encode(c); err != nil {
+		os.Remove(tmpFile)
+		return err
+	}
+
+	// Close file before rename
+	w.Close()
+
+	// Atomic rename
+	if err := os.Rename(tmpFile, filename); err != nil {
+		os.Remove(tmpFile)
+		return err
+	}
+
+	return nil
 }

@@ -403,3 +403,156 @@ button:focus {
   vertical-align: baseline;
   white-space: nowrap;
 }
+
+/* Repository Configuration Form Styles */
+.search-header {
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.config-button {
+  padding: 8px 16px;
+  font-size: 14px;
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.config-button:hover {
+  background-color: #218838;
+}
+
+.config-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.repo-config-form {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.form-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.close-button {
+  background: transparent;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.close-button:hover {
+  color: #333;
+}
+
+.repo-config-form .field {
+  margin-bottom: 15px;
+}
+
+.repo-config-form .field label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #555;
+}
+
+.repo-config-form .field input {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  box-sizing: border-box;
+}
+
+.repo-config-form .field input:focus {
+  outline: none;
+  border-color: #09f;
+  box-shadow: 0 0 5px rgba(0,153,255,.5);
+}
+
+.repo-config-form .field input:disabled {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+}
+
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 10px;
+  border-radius: 3px;
+  margin-bottom: 15px;
+  border: 1px solid #f5c6cb;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.submit-button {
+  padding: 10px 20px;
+  background-color: #007acc;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.submit-button:hover {
+  background-color: #005fa3;
+}
+
+.submit-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.cancel-button {
+  padding: 10px 20px;
+  background-color: #6c757d;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.cancel-button:hover {
+  background-color: #5a6268;
+}
+
+.cancel-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
