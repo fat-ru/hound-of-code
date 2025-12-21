@@ -98,7 +98,7 @@ func searchAll(
 		*filesOpened += r.res.FilesOpened
 	}
 
-	*duration = int(time.Now().Sub(startedAt).Seconds() * 1000)  //nolint
+	*duration = int(time.Now().Sub(startedAt).Seconds() * 1000) //nolint
 
 	return res, nil
 }
@@ -387,7 +387,7 @@ func Setup(m *http.ServeMux, provider SearcherProvider, defaultMaxResults int) {
 		}
 
 		writeResp(w, map[string]string{
-			"status": "ok",
+			"status":  "ok",
 			"message": fmt.Sprintf("Repository %s added successfully", req.Name),
 		})
 	})
@@ -402,7 +402,7 @@ func Setup(m *http.ServeMux, provider SearcherProvider, defaultMaxResults int) {
 
 		type Webhook struct {
 			Repository struct {
-				Name string
+				Name      string
 				Full_name string
 			}
 		}
@@ -412,7 +412,7 @@ func Setup(m *http.ServeMux, provider SearcherProvider, defaultMaxResults int) {
 		err := json.NewDecoder(r.Body).Decode(&h)
 
 		if err != nil {
-		   writeError(w,
+			writeError(w,
 				errors.New(http.StatusText(http.StatusBadRequest)),
 				http.StatusBadRequest)
 			return
