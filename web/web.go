@@ -110,13 +110,13 @@ func (s *Server) GetSearchers() map[string]*searcher.Searcher {
 }
 
 // AddSearcher adds a new searcher to the server (thread-safe)
-func (s *Server) AddSearcher(name string, searcher *searcher.Searcher) {
+func (s *Server) AddSearcher(name string, srch *searcher.Searcher) {
 	s.searchersLock.Lock()
 	defer s.searchersLock.Unlock()
 	if s.searchers == nil {
 		s.searchers = make(map[string]*searcher.Searcher)
 	}
-	s.searchers[name] = searcher
+	s.searchers[name] = srch
 }
 
 // GetConfig returns the server's config
