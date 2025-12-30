@@ -366,6 +366,7 @@ func Setup(m *http.ServeMux, provider SearcherProvider, defaultMaxResults int) {
 			writeError(w, fmt.Errorf("Failed to save config: %v", err), http.StatusInternalServerError)
 			return
 		}
+		log.Printf("save config file success")
 
 		// Create new searcher
 		newSearcher, err := searcher.New(cfg.DbPath, req.Name, repo)

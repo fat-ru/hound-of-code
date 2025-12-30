@@ -90,10 +90,13 @@ func main() {
 	error_log = log.New(os.Stderr, "", log.LstdFlags)
 
 	flagConf := flag.String("conf", "config.json", "")
+	log.Printf("flag conf: %s", flagConf)
 	flagAddr := flag.String("addr", ":6080", "")
+	log.Printf("flag address: %s", flagAddr)
 	flagDev := flag.Bool("dev", false, "")
+	log.Printf("flag dev: %s", flagDev)
 	flagVer := flag.Bool("version", false, "Display version and exit")
-
+	log.Printf("flag version: %s", flagVer)
 	flag.Parse()
 
 	if *flagVer {
@@ -103,6 +106,7 @@ func main() {
 
 	var cfg config.Config
 	if err := cfg.LoadFromFile(*flagConf); err != nil {
+		log.Printf("load config file failed.")
 		panic(err)
 	}
 

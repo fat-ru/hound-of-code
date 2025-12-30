@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -142,6 +143,7 @@ func initConfig(c *Config) error {
 func mergeVCSConfigs(cfg *Config) error {
 	globalConfigLen := len(cfg.VCSConfigMessages)
 	if globalConfigLen == 0 {
+		log.Printf("no global vcs config")
 		return nil
 	}
 
@@ -149,6 +151,7 @@ func mergeVCSConfigs(cfg *Config) error {
 	for vcs, configBytes := range cfg.VCSConfigMessages {
 		var configVals map[string]interface{}
 		if err := json.Unmarshal(*configBytes, &configVals); err != nil {
+			log.Printf("error unmarshal global vcs config: %s", err)
 			return err
 		}
 
@@ -184,11 +187,13 @@ func mergeVCSConfigs(cfg *Config) error {
 		repoMessage := SecretMessage(repoBytes)
 		repo.VcsConfigMessage = &repoMessage
 	}
+	log.Printf("merge vcs configs success, config: %+v", cfg)
 
 	return nil
 }
 
 func (c *Config) LoadFromFile(filename string) error {
+	log.Printf("start load config file: %s", filename)
 	r, err := os.Open(filename)
 	if err != nil {
 		return err
@@ -198,6 +203,7 @@ func (c *Config) LoadFromFile(filename string) error {
 	if err := json.NewDecoder(r).Decode(c); err != nil {
 		return err
 	}
+	log.Printf("load config file success, config: %+v", c)
 
 	if c.Title == "" {
 		c.Title = defaultTitle
@@ -213,6 +219,7 @@ func (c *Config) LoadFromFile(filename string) error {
 	}
 
 	for _, repo := range c.Repos {
+		log.Printf("start init repo: %s", repo.Url)
 		InitRepo(repo)
 	}
 
@@ -232,7 +239,7 @@ func (c *Config) ToJsonString() (string, error) {
 func (c *Config) SaveToFile(filename string) error {
 	// Create a temporary file first for atomic write
 	tmpFile := filename + ".tmp"
-	
+
 	w, err := os.Create(tmpFile)
 	if err != nil {
 		return err
