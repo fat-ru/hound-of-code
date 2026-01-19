@@ -68,3 +68,70 @@ export function UrlToRepo(repo, path, line, rev) {
     // I'm sure there is a nicer React/jsx way to do this:
     return ExpandVars(pattern['base-url'], urlParts);
 }
+
+// Common functions for non-module scripts (settings pages)
+window.Common = {
+    escapeHtml: function(text) {
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    },
+    formatDate: function(dateStr) {
+        if (!dateStr) return '-';
+        try {
+            var date = new Date(dateStr);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        } catch (e) {
+            return dateStr;
+        }
+    }
+};
+
+// Navigation bar setup
+window.initNavBar = function() {
+    var navBar = document.getElementById('navBar');
+    if (!navBar) return;
+
+    var user = Auth.getUser();
+    var isLoggedIn = Auth.isLoggedIn();
+
+    var html = '<div class="top-nav">' +
+        '<a href="/" class="brand">Hound</a>' +
+        '<div class="nav-links">' +
+        '<a href="/">Search</a>';
+
+    if (isLoggedIn) {
+        html += '<a href="/settings">Settings</a>';
+    }
+
+    html += '</div>';
+
+    if (isLoggedIn && user) {
+        html += '<div class="user-info">' +
+            '<span class="username">' + Common.escapeHtml(user.username) + '</span> ' +
+            '<span class="role">(' + user.role + ')</span> ' +
+            '<a href="#" id="logoutBtn" style="margin-left: 10px; opacity: 0.8;">Logout</a>' +
+            '</div>';
+    } else {
+        html += '<div class="nav-links">' +
+            '<a href="/login">Login</a>' +
+            '<a href="/register">Register</a>' +
+            '</div>';
+    }
+
+    html += '</div>';
+
+    navBar.innerHTML = html;
+
+    // Logout handler
+    var logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            Auth.logout();
+            window.location.href = '/';
+        });
+    }
+};
+

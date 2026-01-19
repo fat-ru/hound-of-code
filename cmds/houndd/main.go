@@ -16,7 +16,9 @@ import (
 
 	"github.com/blang/semver/v4"
 	"github.com/hound-search/hound/api"
+	"github.com/hound-search/hound/auth"
 	"github.com/hound-search/hound/config"
+	"github.com/hound-search/hound/data"
 	"github.com/hound-search/hound/searcher"
 	"github.com/hound-search/hound/ui"
 	"github.com/hound-search/hound/web"
@@ -145,6 +147,18 @@ func main() {
 	if err := cfg.LoadFromFile(*flagConf); err != nil {
 		panic(err)
 	}
+
+	// Initialize database
+	dbPath := filepath.Join(filepath.Dir(*flagConf), "hound.db")
+	if err := data.InitDB(dbPath); err != nil {
+		panic(err)
+	}
+	defer data.CloseDB()
+	info_log.Printf("Database initialized at %s", dbPath)
+
+	// Initialize authentication
+	auth.InitAuth("")
+	info_log.Println("Authentication initialized")
 
 	// Start the web server on a background routine.
 	ws := web.Start(&cfg, *flagAddr, *flagDev)

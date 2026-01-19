@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <title>Login - Hound</title>
+    <link rel="stylesheet" href="css/octicons/octicons.css">
+    <link rel="stylesheet" href="css/hound.css">
+</head>
+<body>
+    <div class="top-nav">
+        <a href="/" class="brand">Hound</a>
+        <div class="nav-links">
+            <a href="/">Search</a>
+            <a href="/login">Login</a>
+            <a href="/register">Register</a>
+        </div>
+    </div>
+
+    <div class="auth-container">
+        <h1>Login</h1>
+        <div id="message"></div>
+        <form id="loginForm" class="auth-form">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required autocomplete="current-password">
+            </div>
+            <button type="submit">Login</button>
+        </form>
+        <div class="auth-footer">
+            <p>Don't have an account? <a href="/register">Register</a></p>
+            <p><a href="/">Back to Search</a></p>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>
+    (function() {
+        var form = document.getElementById('loginForm');
+        var messageDiv = document.getElementById('message');
+
+        // Check if already logged in
+        if (Auth.isLoggedIn()) {
+            window.location.href = '/';
+            return;
+        }
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            var username = document.getElementById('username').value;
+            var password = document.getElementById('password').value;
+
+            messageDiv.innerHTML = '';
+
+            Auth.login(username, password)
+                .then(function(response) {
+                    // Store token
+                    Auth.setToken(response.token);
+                    Auth.setUser(response.user);
+                    window.location.href = '/';
+                })
+                .catch(function(error) {
+                    messageDiv.innerHTML = '<div class="error">' + (error.message || 'Login failed') + '</div>';
+                });
+        });
+    })();
+    </script>
+</body>
+</html>

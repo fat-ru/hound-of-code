@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <title>Settings - Hound</title>
+    <link rel="stylesheet" href="css/octicons/octicons.css">
+    <link rel="stylesheet" href="css/hound.css">
+</head>
+<body>
+    <div id="navBar"></div>
+
+    <div class="settings-container">
+        <div class="settings-header">
+            <h1>Settings</h1>
+        </div>
+        <div class="settings-nav">
+            <a href="#" id="navRepos" class="active">Repository Settings</a>
+            <a href="#" id="navUsers" style="display:none;">User Settings</a>
+        </div>
+        <div id="content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/common.js"></script>
+    <script>
+    (function() {
+        // Initialize navigation bar
+        if (typeof initNavBar === 'function') {
+            initNavBar();
+        }
+
+        var contentDiv = document.getElementById('content');
+        var navRepos = document.getElementById('navRepos');
+        var navUsers = document.getElementById('navUsers');
+
+        // Check authentication
+        if (!Auth.isLoggedIn()) {
+            window.location.href = '/login';
+            return;
+        }
+
+        var user = Auth.getUser();
+        var isAdmin = user && user.role === 'admin';
+
+        // Show/hide user settings based on role
+        if (isAdmin) {
+            navUsers.style.display = 'inline-block';
+        }
+
+        // Set active nav based on URL hash or default to repos
+        var hash = window.location.hash;
+        if (hash === '#users' && isAdmin) {
+            navRepos.classList.remove('active');
+            navUsers.classList.add('active');
+            loadUserSettings();
+        } else {
+            navRepos.classList.add('active');
+            navUsers.classList.remove('active');
+            loadRepoSettings();
+        }
+
+        // Handle nav clicks
+        navRepos.addEventListener('click', function(e) {
+            e.preventDefault();
+            navUsers.classList.remove('active');
+            navRepos.classList.add('active');
+            window.location.hash = '#repos';
+            loadRepoSettings();
+        });
+
+        navUsers.addEventListener('click', function(e) {
+            e.preventDefault();
+            navRepos.classList.remove('active');
+            navUsers.classList.add('active');
+            window.location.hash = '#users';
+            loadUserSettings();
+        });
+
+        // Load repo settings
+        function loadRepoSettings() {
+            contentDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading...</p></div>';
+            loadScript('js/repo-settings.js')
+                .then(function() {
+                    if (typeof RepoSettings !== 'undefined') {
+                        RepoSettings.init(contentDiv);
+                    }
+                })
+                .catch(function(err) {
+                    contentDiv.innerHTML = '<div class="error">Failed to load settings</div>';
+                });
+        }
+
+        // Load user settings
+        function loadUserSettings() {
+            if (!isAdmin) {
+                contentDiv.innerHTML = '<div class="error">Access denied. Admin privileges required.</div>';
+                return;
+            }
+            contentDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading...</p></div>';
+            loadScript('js/user-settings.js')
+                .then(function() {
+                    if (typeof UserSettings !== 'undefined') {
+                        UserSettings.init(contentDiv);
+                    }
+                })
+                .catch(function(err) {
+                    contentDiv.innerHTML = '<div class="error">Failed to load settings</div>';
+                });
+        }
+
+        // Helper to load scripts dynamically
+        function loadScript(src) {
+            return new Promise(function(resolve, reject) {
+                var script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+    })();
+    </script>
+</body>
+</html>

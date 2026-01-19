@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -20,6 +21,9 @@ const (
 	maxLinesOfContext     uint = 20
 	maxLimit              int  = 100000
 )
+
+// UserContextKey is the key for storing user in context
+type UserContextKey struct{}
 
 type Stats struct {
 	FilesOpened int
@@ -174,7 +178,19 @@ func parseRangeValue(rv string) (int, int) {
 	return b, e
 }
 
+// GetUserFromContext retrieves the authenticated user from context
+func GetUserFromContext(ctx context.Context) interface{} {
+	return ctx.Value(UserContextKey{})
+}
+
+// SetUserInContext sets the user in the context
+func SetUserInContext(ctx context.Context, user interface{}) context.Context {
+	return context.WithValue(ctx, UserContextKey{}, user)
+}
+
+// Setup configures all API routes with proper middleware
 func Setup(m *http.ServeMux, idx map[string]*searcher.Searcher, defaultMaxResults int) {
+	// Public routes (no auth required)
 	m.HandleFunc("/api/v1/repos", func(w http.ResponseWriter, r *http.Request) {
 		res := map[string]*config.Repo{}
 		for name, srch := range idx {
