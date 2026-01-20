@@ -11,6 +11,7 @@
               title="{{ .Title }}" />
     </head>
     <body>
+        <div id="navBar"></div>
         <div id="root">
             <div id="result">
             </div>
@@ -20,6 +21,16 @@
         var ModelData = {{ .ReposAsJson }};
         </script>
         <script src="js/react-{{.ReactVersion}}.min.js"></script>
+        <script src="js/auth.js"></script>
+        <script src="js/common.js"></script>
+        <script>
+        // Initialize navigation bar after page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof initNavBar === 'function') {
+                initNavBar();
+            }
+        });
+        </script>
         {{ .Source }}
     </body>
 </html>

@@ -99,13 +99,9 @@ window.initNavBar = function() {
     var html = '<div class="top-nav">' +
         '<a href="/" class="brand">Hound</a>' +
         '<div class="nav-links">' +
-        '<a href="/">Search</a>';
-
-    if (isLoggedIn) {
-        html += '<a href="/settings">Settings</a>';
-    }
-
-    html += '</div>';
+        '<a href="/">Search</a>' +
+        '<a href="/settings" id="settingsLink">Settings</a>' +
+        '</div>';
 
     if (isLoggedIn && user) {
         html += '<div class="user-info">' +
@@ -123,6 +119,17 @@ window.initNavBar = function() {
     html += '</div>';
 
     navBar.innerHTML = html;
+
+    // Settings link handler - redirect to login if not logged in
+    var settingsLink = document.getElementById('settingsLink');
+    if (settingsLink) {
+        settingsLink.addEventListener('click', function(e) {
+            if (!isLoggedIn) {
+                e.preventDefault();
+                window.location.href = '/login';
+            }
+        });
+    }
 
     // Logout handler
     var logoutBtn = document.getElementById('logoutBtn');

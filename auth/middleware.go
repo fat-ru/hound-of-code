@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -147,12 +148,12 @@ func requireRole(roles ...string) func(http.Handler) http.Handler {
 }
 
 // setUserInContext sets the user in the context
-func setUserInContext(ctx interface{ Value(key interface{}) interface{} }, user *data.User) interface{} {
-	return ctx
+func setUserInContext(ctx context.Context, user *data.User) context.Context {
+	return context.WithValue(ctx, UserContextKey, user)
 }
 
 // getUserFromContext gets the user from the context
-func getUserFromContext(ctx interface{ Value(key interface{}) interface{} }) *data.User {
+func getUserFromContext(ctx context.Context) *data.User {
 	if ctx == nil {
 		return nil
 	}
