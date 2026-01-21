@@ -9,6 +9,7 @@ var Auth = (function() {
      * Make an API request with optional authentication
      */
     function apiRequest(url, options) {
+        options = options || {};
         return new Promise(function(resolve, reject) {
             var xhr = new XMLHttpRequest();
             xhr.open(options.method || 'GET', url);
@@ -31,7 +32,7 @@ var Auth = (function() {
                 } else {
                     try {
                         var error = JSON.parse(xhr.responseText);
-                        reject(error.error ? new Error(error.error) : new Error('Request failed'));
+                        reject(error.error ? new Error(error.error) : new Error('Request failed with status ' + xhr.status));
                     } catch (e) {
                         reject(new Error('Request failed with status ' + xhr.status));
                     }

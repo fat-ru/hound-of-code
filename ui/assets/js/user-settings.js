@@ -19,7 +19,12 @@ var UserSettings = (function() {
                 render();
             })
             .catch(function(err) {
-                container.innerHTML = '<div class="error">Failed to load users: ' + err.message + '</div>';
+                // Check if it's a permission error
+                if (err.message && (err.message.includes('Admin access required') || err.message.includes('403') || err.message.includes('forbidden'))) {
+                    container.innerHTML = '<div class="error">Access Denied. Admin privileges required to manage users.</div>';
+                } else {
+                    container.innerHTML = '<div class="error">Failed to load users: ' + (err.message || 'Unknown error') + '</div>';
+                }
             });
     }
 
