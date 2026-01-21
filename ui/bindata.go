@@ -8,7 +8,7 @@ import (
 
 // content holds our static web server content.
 //
-//go:embed ui/assets/*
+//go:embed ui/assets
 var assetsFS embed.FS
 
 // AssetInfo loads and returns the asset info for the given name.
