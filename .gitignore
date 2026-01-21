@@ -4,7 +4,6 @@
 .DS_Store
 *.exe
 /db
-/data
 /.idea
 dist/
 config.json
