@@ -138,7 +138,7 @@ var UserSettings = (function() {
             '      </div>',
             '      <div class="form-group">',
             '        <label for="password">Password' + (isEdit ? ' (leave blank to keep current)' : '') + '</label>',
-            '        '<input type="password" id="password" name="password" ' + (isEdit ? '' : 'required') + ' minlength="6">',
+            '        <input type="password" id="password" name="password" ' + (isEdit ? '' : 'required') + ' minlength="6">',
             '      </div>',
             '      <div class="form-group">',
             '        <label for="role">Role</label>',
@@ -208,11 +208,20 @@ var UserSettings = (function() {
     }
 
     function escapeHtml(text) {
-        return Common.escapeHtml(text);
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     function formatDate(dateStr) {
-        return Common.formatDate(dateStr);
+        if (!dateStr) return '-';
+        try {
+            var date = new Date(dateStr);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        } catch (e) {
+            return dateStr;
+        }
     }
 
     return {
