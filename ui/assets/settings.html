@@ -30,6 +30,11 @@
     <script src="js/common.js"></script>
     <script>
     (function() {
+        console.log('[Settings] Page loaded');
+        console.log('[Settings] Auth.isLoggedIn():', Auth.isLoggedIn());
+        console.log('[Settings] Auth.getToken():', Auth.getToken());
+        console.log('[Settings] Auth.getUser():', Auth.getUser());
+
         // Initialize navigation bar
         if (typeof initNavBar === 'function') {
             initNavBar();
@@ -41,12 +46,15 @@
 
         // Check authentication
         if (!Auth.isLoggedIn()) {
+            console.log('[Settings] Not logged in, redirecting to /login');
             window.location.href = '/login';
             return;
         }
 
         var user = Auth.getUser();
         var isAdmin = user && user.role === 'admin';
+        console.log('[Settings] User:', user);
+        console.log('[Settings] IsAdmin:', isAdmin);
 
         // Show/hide user settings based on role
         if (isAdmin) {

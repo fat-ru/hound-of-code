@@ -43,8 +43,12 @@
         var form = document.getElementById('loginForm');
         var messageDiv = document.getElementById('message');
 
+        console.log('[Login] Page loaded');
+        console.log('[Login] Auth.isLoggedIn():', Auth.isLoggedIn());
+
         // Check if already logged in
         if (Auth.isLoggedIn()) {
+            console.log('[Login] Already logged in, redirecting to /');
             window.location.href = '/';
             return;
         }
@@ -56,15 +60,20 @@
             var password = document.getElementById('password').value;
 
             messageDiv.innerHTML = '';
+            console.log('[Login] Attempting login for:', username);
 
             Auth.login(username, password)
                 .then(function(response) {
+                    console.log('[Login] Login response:', response);
+                    console.log('[Login] Token:', response.token ? response.token.substring(0, 20) + '...' : 'NO TOKEN');
                     // Store token
                     Auth.setToken(response.token);
                     Auth.setUser(response.user);
+                    console.log('[Login] Token stored, redirecting to /');
                     window.location.href = '/';
                 })
                 .catch(function(error) {
+                    console.error('[Login] Login failed:', error);
                     messageDiv.innerHTML = '<div class="error">' + (error.message || 'Login failed') + '</div>';
                 });
         });
