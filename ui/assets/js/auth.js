@@ -12,17 +12,27 @@ var Auth = (function() {
         options = options || {};
         return new Promise(function(resolve, reject) {
             var xhr = new XMLHttpRequest();
-            xhr.open(options.method || 'GET', url);
+            var method = options.method || 'GET';
+            console.log('[Auth] API Request:', method, url);
+
+            var token = getToken();
+            if (token) {
+                console.log('[Auth] Sending token:', token.substring(0, 20) + '...');
+            } else {
+                console.log('[Auth] No token available');
+            }
+
+            xhr.open(method, url);
 
             xhr.setRequestHeader('Content-Type', 'application/json');
 
             // Add auth token if available
-            var token = getToken();
             if (token) {
                 xhr.setRequestHeader('Authorization', 'Bearer ' + token);
             }
 
             xhr.onload = function() {
+                console.log('[Auth] API Response:', xhr.status, url);
                 if (xhr.status >= 200 && xhr.status < 300) {
                     try {
                         resolve(JSON.parse(xhr.responseText));
@@ -56,8 +66,11 @@ var Auth = (function() {
      */
     function getToken() {
         try {
-            return localStorage.getItem(TOKEN_KEY);
+            var token = localStorage.getItem(TOKEN_KEY);
+            console.log('[Auth] getToken:', token ? 'found' : 'not found');
+            return token;
         } catch (e) {
+            console.error('[Auth] Error getting token:', e);
             return null;
         }
     }
@@ -68,8 +81,15 @@ var Auth = (function() {
     function getUser() {
         try {
             var userJson = localStorage.getItem(USER_KEY);
-            return userJson ? JSON.parse(userJson) : null;
+            if (!userJson) {
+                console.log('[Auth] getUser: no user in localStorage');
+                return null;
+            }
+            var user = JSON.parse(userJson);
+            console.log('[Auth] getUser:', user.username);
+            return user;
         } catch (e) {
+            console.error('[Auth] Error getting user:', e);
             return null;
         }
     }
