@@ -13,7 +13,6 @@ import (
 
 	"github.com/hound-search/hound/config"
 	"github.com/hound-search/hound/index"
-	"github.com/hound-search/hound/searcher"
 )
 
 const (

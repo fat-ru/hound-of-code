@@ -113,7 +113,8 @@ func runHttp( //nolint
 	}
 
 	m.Handle("/", h)
-	api.Setup(m, idx, cfg.ResultLimit)
+	api.InitSearcherManager(idx, cfg.DbPath)
+	api.Setup(m, cfg.ResultLimit)
 	return http.ListenAndServe(addr, m)
 }
 
