@@ -62,19 +62,29 @@ func searchAll(
 	query string,
 	opts *index.SearchOptions,
 	repos []string,
-	idx map[string]*searcher.Searcher,
 	filesOpened *int,
 	duration *int) (map[string]*index.SearchResponse, error) {
 
 	startedAt := time.Now()
 
 	n := len(repos)
+	if n == 0 {
+		*duration = 0
+		return make(map[string]*index.SearchResponse), nil
+	}
 
 	// use a buffered channel to avoid routine leaks on errs.
 	ch := make(chan *searchResponse, n)
+
+	idx := GetAllSearchers()
 	for _, repo := range repos {
 		go func(repo string) {
-			fms, err := idx[repo].Search(query, opts)
+			srch := idx[repo]
+			if srch == nil {
+				ch <- &searchResponse{repo, nil, nil}
+				return
+			}
+			fms, err := srch.Search(query, opts)
 			ch <- &searchResponse{repo, fms, err}
 		}(repo)
 	}
@@ -86,7 +96,7 @@ func searchAll(
 			return nil, r.err
 		}
 
-		if r.res.Matches == nil {
+		if r.res == nil || r.res.Matches == nil {
 			continue
 		}
 
@@ -105,9 +115,10 @@ func parseAsBool(v string) bool {
 	return v == "true" || v == "1" || v == "fosho"
 }
 
-func parseAsRepoList(v string, idx map[string]*searcher.Searcher) []string {
+func parseAsRepoList(v string) []string {
 	v = strings.TrimSpace(v)
 	var repos []string
+	idx := GetAllSearchers()
 	if v == "*" {
 		for repo := range idx {
 			repos = append(repos, repo)
@@ -189,10 +200,11 @@ func SetUserInContext(ctx context.Context, user interface{}) context.Context {
 }
 
 // Setup configures all API routes with proper middleware
-func Setup(m *http.ServeMux, idx map[string]*searcher.Searcher, defaultMaxResults int) {
+func Setup(m *http.ServeMux, defaultMaxResults int) {
 	// Public routes (no auth required)
 	m.HandleFunc("/api/v1/repos", func(w http.ResponseWriter, r *http.Request) {
 		res := map[string]*config.Repo{}
+		idx := GetAllSearchers()
 		for name, srch := range idx {
 			res[name] = srch.Repo
 		}
@@ -204,7 +216,7 @@ func Setup(m *http.ServeMux, idx map[string]*searcher.Searcher, defaultMaxResult
 		var opt index.SearchOptions
 
 		stats := parseAsBool(r.FormValue("stats"))
-		repos := parseAsRepoList(r.FormValue("repos"), idx)
+		repos := parseAsRepoList(r.FormValue("repos"))
 		query := r.FormValue("q")
 		opt.Offset, opt.Limit = parseRangeValue(r.FormValue("rng"))
 		opt.FileRegexp = r.FormValue("files")
@@ -225,7 +237,7 @@ func Setup(m *http.ServeMux, idx map[string]*searcher.Searcher, defaultMaxResult
 		var filesOpened int
 		var durationMs int
 
-		results, err := searchAll(query, &opt, repos, idx, &filesOpened, &durationMs)
+		results, err := searchAll(query, &opt, repos, &filesOpened, &durationMs)
 		if err != nil {
 			// TODO(knorton): Return ok status because the UI expects it for now.
 			writeError(w, err, http.StatusOK)
@@ -250,7 +262,12 @@ func Setup(m *http.ServeMux, idx map[string]*searcher.Searcher, defaultMaxResult
 
 	m.HandleFunc("/api/v1/excludes", func(w http.ResponseWriter, r *http.Request) {
 		repo := r.FormValue("repo")
-		res := idx[repo].GetExcludedFiles()
+		srch := GetSearcher(repo)
+		if srch == nil {
+			http.Error(w, "Repository not found", http.StatusNotFound)
+			return
+		}
+		res := srch.GetExcludedFiles()
 		w.Header().Set("Content-Type", "application/json;charset=utf-8")
 		w.Header().Set("Access-Control-Allow", "*")
 		fmt.Fprint(w, res)
@@ -264,18 +281,18 @@ func Setup(m *http.ServeMux, idx map[string]*searcher.Searcher, defaultMaxResult
 			return
 		}
 
-		repos := parseAsRepoList(r.FormValue("repos"), idx)
+		repos := parseAsRepoList(r.FormValue("repos"))
 
 		for _, repo := range repos {
-			searcher := idx[repo]
-			if searcher == nil {
+			srch := GetSearcher(repo)
+			if srch == nil {
 				writeError(w,
 					fmt.Errorf("No such repository: %s", repo),
 					http.StatusNotFound)
 				return
 			}
 
-			if !searcher.Update() {
+			if !srch.Update() {
 				writeError(w,
 					fmt.Errorf("Push updates are not enabled for repository %s", repo),
 					http.StatusForbidden)
@@ -315,16 +332,16 @@ func Setup(m *http.ServeMux, idx map[string]*searcher.Searcher, defaultMaxResult
 
 		repo := h.Repository.Full_name
 
-		searcher := idx[h.Repository.Full_name]
+		srch := GetSearcher(h.Repository.Full_name)
 
-		if searcher == nil {
+		if srch == nil {
 			writeError(w,
 				fmt.Errorf("No such repository: %s", repo),
 				http.StatusNotFound)
 			return
 		}
 
-		if !searcher.Update() {
+		if !srch.Update() {
 			writeError(w,
 				fmt.Errorf("Push updates are not enabled for repository %s", repo),
 				http.StatusForbidden)

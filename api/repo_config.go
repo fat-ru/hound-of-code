@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 
@@ -160,6 +161,16 @@ func HandleCreateRepoConfig(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, err, http.StatusInternalServerError)
 		return
+	}
+
+	// Create a searcher for the new repo and start indexing
+	if req.Enabled {
+		go func() {
+			_, err := CreateSearcherForRepo(req.Name, created)
+			if err != nil {
+				log.Printf("Failed to create searcher for repo %s: %v", req.Name, err)
+			}
+		}()
 	}
 
 	writeResp(w, created)

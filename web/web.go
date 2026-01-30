@@ -170,7 +170,8 @@ func (s *Server) ServeWithIndex(idx map[string]*searcher.Searcher) error {
 
 	// Static files and UI
 	m.Handle("/", h)
-	api.Setup(m, idx, s.cfg.ResultLimit)
+	api.InitSearcherManager(idx, s.cfg.DbPath)
+	api.Setup(m, s.cfg.ResultLimit)
 
 	s.serveWith(m)
 
