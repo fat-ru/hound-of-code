@@ -203,6 +203,11 @@ var RepoSettings = (function() {
                 .then(function() {
                     modalContainer.innerHTML = '';
                     loadRepos();
+                    // Refresh the page to update the search index and repo list
+                    // This ensures the new repo is indexed and available for searching
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 1000);
                 })
                 .catch(function(err) {
                     messageDiv.innerHTML = '<div class="error">' + err.message + '</div>';
