@@ -159,6 +159,29 @@ var Model = {
             return;
         }
 
+        // First, refresh the repos list from the server to include newly added repos
+        var self = this;
+        reqwest({
+            url: "api/v1/repos",
+            type: "json",
+            success: function (data) {
+                // Update the repos list
+                self.repos = data;
+                self.didLoadRepos.raise(self, self.repos);
+
+                // Now perform the search
+                self.doSearch(params, startedAt);
+            },
+            error: function (xhr, status, err) {
+                // If we can't refresh repos, try searching anyway
+                self.doSearch(params, startedAt);
+            },
+        });
+    },
+
+    doSearch: function (params, startedAt) {
+        var _this = this;
+
         reqwest({
             url: "api/v1/search",
             data: params,
@@ -174,6 +197,11 @@ var Model = {
                     results = [];
                 for (var repo in matches) {
                     if (!matches[repo]) {
+                        continue;
+                    }
+
+                    // Skip repos that don't exist in our repos list
+                    if (!_this.repos || !_this.repos[repo]) {
                         continue;
                     }
 
@@ -276,11 +304,19 @@ var Model = {
     },
 
     UrlToRepo: function (repo, path, line, rev) {
-        return UrlToRepo(this.repos[repo], path, line, rev);
+        var repoInfo = this.repos[repo];
+        if (!repoInfo) {
+            return "#";
+        }
+        return UrlToRepo(repoInfo, path, line, rev);
     },
 
     UrlToRoot: function (repo) {
-        return UrlParts(this.repos[repo]).url;
+        var repoInfo = this.repos[repo];
+        if (!repoInfo) {
+            return "";
+        }
+        return UrlParts(repoInfo).url;
     },
 };
 
