@@ -91,6 +91,7 @@ func isPublicRoute(path, method string) bool {
 		"/api/v1/auth/login",
 		"/api/v1/auth/register",
 		"/api/v1/repos",
+		"/api/v1/repos/config",
 		"/api/v1/search",
 		"/api/v1/excludes",
 		"/api/v1/health",
