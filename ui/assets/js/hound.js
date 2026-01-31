@@ -161,10 +161,12 @@ var Model = {
 
         // First, refresh the repos list from the server to include newly added repos
         var self = this;
+        console.log('[Model] Refreshing repos list before search...');
         reqwest({
             url: "api/v1/repos",
             type: "json",
             success: function (data) {
+                console.log('[Model] Repos list refreshed:', Object.keys(data));
                 // Update the repos list
                 self.repos = data;
                 self.didLoadRepos.raise(self, self.repos);
@@ -173,6 +175,7 @@ var Model = {
                 self.doSearch(params, startedAt);
             },
             error: function (xhr, status, err) {
+                console.error('[Model] Failed to refresh repos:', err);
                 // If we can't refresh repos, try searching anyway
                 self.doSearch(params, startedAt);
             },
@@ -181,13 +184,16 @@ var Model = {
 
     doSearch: function (params, startedAt) {
         var _this = this;
+        console.log('[Model] Starting search for:', params.q);
 
         reqwest({
             url: "api/v1/search",
             data: params,
             type: "json",
             success: function (data) {
+                console.log('[Model] Search response received:', data);
                 if (data.Error) {
+                    console.error('[Model] Search error:', data.Error);
                     _this.didError.raise(_this, data.Error);
                     return;
                 }
@@ -195,6 +201,9 @@ var Model = {
                 var matches = data.Results,
                     stats = data.Stats,
                     results = [];
+                console.log('[Model] Raw matches from server:', Object.keys(matches));
+                console.log('[Model] Current repos list:', Object.keys(_this.repos || {}));
+
                 for (var repo in matches) {
                     if (!matches[repo]) {
                         continue;
@@ -202,6 +211,7 @@ var Model = {
 
                     // Skip repos that don't exist in our repos list
                     if (!_this.repos || !_this.repos[repo]) {
+                        console.log('[Model] Skipping repo not in list:', repo);
                         continue;
                     }
 
@@ -213,6 +223,8 @@ var Model = {
                         FilesWithMatch: res.FilesWithMatch,
                     });
                 }
+
+                console.log('[Model] Filtered results:', results.length, 'repos');
 
                 results.sort(function (a, b) {
                     return (

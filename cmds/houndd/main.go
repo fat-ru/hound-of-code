@@ -158,7 +158,12 @@ func main() {
 	info_log.Printf("Database initialized at %s", dbPath)
 
 	// Initialize authentication
-	auth.InitAuth("")
+	// Use HOUND_JWT_SECRET environment variable if set, otherwise generate one
+	jwtSecret := os.Getenv("HOUND_JWT_SECRET")
+	if jwtSecret == "" {
+		info_log.Println("WARNING: HOUND_JWT_SECRET not set, users will need to re-login after restart")
+	}
+	auth.InitAuth(jwtSecret)
 	info_log.Println("Authentication initialized")
 
 	// Start the web server on a background routine.
