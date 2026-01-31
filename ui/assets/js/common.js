@@ -10,8 +10,22 @@ export function ExpandVars(template, values) {
 };
 
 export function UrlParts(repo, path, line, rev) {
-    var url = repo.url.replace(/\.git$/, ''),
-        pattern = repo['url-pattern'],
+    // Defensive check: if repo is undefined, return empty object
+    if (!repo) {
+        return {
+            url: '',
+            hostname: '',
+            port: '',
+            project: '',
+            'repo': '',
+            path: '',
+            rev: rev,
+            anchor: ''
+        };
+    }
+
+    var url = repo.url ? repo.url.replace(/\.git$/, '') : '',
+        pattern = repo['url-pattern'] || { anchor: '#L{line}' },
         hostname = '',
         project = '',
         repoName = '',
