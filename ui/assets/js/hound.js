@@ -1,4 +1,9 @@
-import { EscapeRegExp, UrlParts, UrlToRepo } from "./common";
+// Use global functions from common.js (loaded via script tag)
+var EscapeRegExp = window.EscapeRegExp;
+var UrlParts = window.UrlParts;
+var ExpandVars = window.ExpandVars;
+var UrlToRepo = window.UrlToRepo;
+
 import { Signal } from "./signal";
 import reqwest from 'reqwest';
 import { merge } from 'merge-anything';
@@ -320,7 +325,14 @@ var Model = {
         if (!repoInfo) {
             return "#";
         }
-        return UrlToRepo(repoInfo, path, line, rev);
+        // Handle null url-pattern
+        var pattern = repoInfo['url-pattern'];
+        if (!pattern) {
+            // Use default pattern
+            pattern = { 'base-url': repoInfo.url + '/blob/{rev}/{path}{anchor}', anchor: '#L{line}' };
+        }
+        var urlParts = UrlParts(repoInfo, path, line, rev);
+        return ExpandVars(pattern['base-url'] || urlParts.url + '/blob/{rev}/{path}{anchor}', urlParts);
     },
 
     UrlToRoot: function (repo) {
@@ -328,7 +340,8 @@ var Model = {
         if (!repoInfo) {
             return "";
         }
-        return UrlParts(repoInfo).url;
+        var urlParts = UrlParts(repoInfo);
+        return urlParts.url;
     },
 };
 

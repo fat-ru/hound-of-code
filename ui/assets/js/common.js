@@ -1,15 +1,17 @@
-export function EscapeRegExp(regexp) {
+// Common utility functions for Hound
+
+function EscapeRegExp(regexp) {
     return regexp.replace(/[-[\]{}()*+!<=:?.\/\\^$|#\s,]/g, '\\$&');
 }
 
-export function ExpandVars(template, values) {
+function ExpandVars(template, values) {
     for (var name in values) {
         template = template.replace('{' + name + '}', values[name]);
     }
     return template;
-};
+}
 
-export function UrlParts(repo, path, line, rev) {
+function UrlParts(repo, path, line, rev) {
     // Defensive check: if repo is undefined, return empty object
     if (!repo) {
         return {
@@ -75,12 +77,25 @@ export function UrlParts(repo, path, line, rev) {
     };
 }
 
-export function UrlToRepo(repo, path, line, rev) {
+function UrlToRepo(repo, path, line, rev) {
+    // Handle null repo
+    if (!repo) {
+        return '#';
+    }
+
     var urlParts = UrlParts(repo, path, line, rev),
-        pattern = repo['url-pattern']
+        pattern = repo['url-pattern'] || {};
 
     // I'm sure there is a nicer React/jsx way to do this:
-    return ExpandVars(pattern['base-url'], urlParts);
+    return ExpandVars(pattern['base-url'] || '{url}/blob/{rev}/{path}{anchor}', urlParts);
+}
+
+// Export functions to window for both module and non-module scripts
+if (typeof window !== 'undefined') {
+    window.EscapeRegExp = EscapeRegExp;
+    window.ExpandVars = ExpandVars;
+    window.UrlParts = UrlParts;
+    window.UrlToRepo = UrlToRepo;
 }
 
 // Common functions for non-module scripts (settings pages)
@@ -155,4 +170,3 @@ window.initNavBar = function() {
         });
     }
 };
-
