@@ -15,7 +15,11 @@
       "Bash(python -c:*)",
       "Bash(identify \"D:/Project/OpenSourceTool/hound/screenshot.png\")",
       "Bash(powershell -Command \"\\(Get-Content ''D:/Project/OpenSourceTool/hound/cmds/houndd/main.go'' | ForEach-Object {$_-replace ''info_log.Println\\\\\\(\"\"Using JWT secret from config file\"\"\\)'', ''info_log.Printf\\(\"\"Using JWT secret from config file \\(length: %d\\)\"\", len\\($jwtSecret\\)\\)''} | Set-Content ''D:/Project/OpenSourceTool/hound/cmds/houndd/main.go''\")",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(sqlite3:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
