@@ -339,14 +339,15 @@ var Model = {
         if (!repoInfo) {
             return "#";
         }
-        // Handle null url-pattern
-        var pattern = repoInfo['url-pattern'];
-        if (!pattern) {
-            // Use default pattern
-            pattern = { 'base-url': repoInfo.url + '/blob/{rev}/{path}{anchor}', anchor: '#L{line}' };
+        // Handle null/undefined url-pattern - convert to object if needed
+        var pattern = repoInfo['url-pattern'] || {};
+        if (pattern === null) {
+            pattern = {};
         }
         var urlParts = UrlParts(repoInfo, path, line, rev);
-        return ExpandVars(pattern['base-url'] || urlParts.url + '/blob/{rev}/{path}{anchor}', urlParts);
+        // Use default pattern if base-url is not defined
+        var baseUrl = pattern['base-url'] || urlParts.url + '/blob/{rev}/{path}{anchor}';
+        return ExpandVars(baseUrl, urlParts);
     },
 
     UrlToRoot: function (repo) {
