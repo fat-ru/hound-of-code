@@ -162,7 +162,7 @@ func main() {
 	jwtSecret := ""
 	if cfg.JwtSecret != "" {
 		jwtSecret = cfg.JwtSecret
-		info_log.Println("Using JWT secret from config file")
+		info_log.Printf("Using JWT secret from config file (length: %d)", len(jwtSecret))
 	}
 	if jwtSecret == "" {
 		jwtSecret = os.Getenv("HOUND_JWT_SECRET")
@@ -174,11 +174,16 @@ func main() {
 		info_log.Println("WARNING: JWT secret not set, using random secret - users will need to re-login after each restart")
 	}
 	auth.InitAuth(jwtSecret)
+	info_log.Printf("After InitAuth, jwtSecret length: %d", len(jwtSecret))
 
 	// If config file has a JWT secret, set it explicitly (overrides random generation)
 	// This must be done after InitAuth to ensure persistence
 	if cfg.JwtSecret != "" {
+		info_log.Printf("Setting JWT secret from config (length: %d)", len(cfg.JwtSecret))
 		auth.SetJwtSecret(cfg.JwtSecret)
+		info_log.Printf("After SetJwtSecret, final jwtSecret length: %d", len(cfg.JwtSecret))
+	} else {
+		info_log.Println("Not overriding: JWT secret is not set in config file")
 	}
 	info_log.Println("Authentication initialized")
 

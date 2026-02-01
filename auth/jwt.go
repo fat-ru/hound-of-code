@@ -32,7 +32,7 @@ type Claims struct {
 // If secret is empty, generates a random secret and logs a warning
 // SetJwtSecret can be called later to set a fixed secret from config
 func InitAuth(secret string) error {
-	if secret == "" {
+	if secret == "" || secret == "[]" {
 		// Generate a random secret if not provided
 		secretBytes := make([]byte, 32)
 		if _, err := rand.Read(secretBytes); err != nil {
@@ -48,7 +48,7 @@ func InitAuth(secret string) error {
 // SetJwtSecret sets the JWT secret from config file
 // This allows the secret to persist across restarts
 func SetJwtSecret(secret string) {
-	if secret != "" {
+	if secret != "" && secret != "[]" {
 		jwtSecret = []byte(secret)
 	}
 }
