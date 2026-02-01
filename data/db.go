@@ -38,6 +38,11 @@ func InitDB(dbPath string) error {
 		return fmt.Errorf("failed to create tables: %w", err)
 	}
 
+	// Run migrations
+	if err := migrateDatabase(); err != nil {
+		return fmt.Errorf("failed to run database migrations: %w", err)
+	}
+
 	return nil
 }
 
@@ -100,6 +105,34 @@ func createTables() error {
 
 	if _, err := db.Exec(repoConfigsTable); err != nil {
 		return fmt.Errorf("failed to create repo_configs table: %w", err)
+	}
+
+	return nil
+}
+
+// migrateDatabase runs database migrations to upgrade the schema
+func migrateDatabase() error {
+	// Check if user_id column exists in repo_configs table
+	var colExists int
+	err := db.QueryRow(`
+		SELECT COUNT(*) FROM pragma_table_info('repo_configs') WHERE name = 'user_id'
+	`).Scan(&colExists)
+	if err != nil {
+		return fmt.Errorf("failed to check user_id column: %w", err)
+	}
+
+	// Add user_id column if it doesn't exist
+	if colExists == 0 {
+		_, err = db.Exec(`ALTER TABLE repo_configs ADD COLUMN user_id INTEGER NOT NULL DEFAULT 0`)
+		if err != nil {
+			return fmt.Errorf("failed to add user_id column: %w", err)
+		}
+	}
+
+	// Create index if it doesn't exist
+	_, err = db.Exec(`CREATE INDEX IF NOT EXISTS idx_repo_configs_user_id ON repo_configs(user_id)`)
+	if err != nil {
+		return fmt.Errorf("failed to create user_id index: %w", err)
 	}
 
 	return nil
