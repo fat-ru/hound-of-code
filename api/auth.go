@@ -115,11 +115,16 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create user
+	log.Printf("[REGISTER] Creating user: %s with role: %s", req.Username, role)
+	log.Printf("[REGISTER] Password hash to store (len: %d): %s...", len(passwordHash), passwordHash[:30]+"...")
 	user, err := data.CreateUser(req.Username, passwordHash, role)
 	if err != nil {
+		log.Printf("[REGISTER] Failed to create user: %v", err)
 		writeError(w, err, http.StatusInternalServerError)
 		return
 	}
+
+	log.Printf("[REGISTER] User created successfully with ID: %d", user.ID)
 
 	// Generate token
 	token, err := auth.GenerateToken(user)
