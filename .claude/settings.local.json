@@ -5,7 +5,15 @@
       "mcp__ide__getDiagnostics",
       "Bash(go build ./...)",
       "Bash(npx webpack:*)",
-      "Bash(npm install)"
+      "Bash(npm install)",
+      "Bash(make:*)",
+      "Bash(go build:*)",
+      "Bash(curl:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash(base64:*)",
+      "Bash(python -c:*)",
+      "Bash(identify \"D:/Project/OpenSourceTool/hound/screenshot.png\")"
     ]
   }
 }

@@ -214,12 +214,9 @@ var Model = {
                         continue;
                     }
 
-                    // Skip repos that don't exist in our repos list
-                    if (!_this.repos || !_this.repos[repo]) {
-                        console.log('[Model] Skipping repo not in list:', repo);
-                        continue;
-                    }
-
+                    // Accept all repos from search results, even if not yet in our repos list
+                    // This handles the case where a newly indexed repo is searched before
+                    // the repos list has been fully refreshed
                     var res = matches[repo];
                     results.push({
                         Repo: repo,
@@ -227,6 +224,19 @@ var Model = {
                         Matches: res.Matches,
                         FilesWithMatch: res.FilesWithMatch,
                     });
+
+                    // Add repo to repos list if not already there (with minimal info)
+                    if (!_this.repos || !_this.repos[repo]) {
+                        console.log('[Model] Adding search result repo to list:', repo);
+                        if (!_this.repos) {
+                            _this.repos = {};
+                        }
+                        _this.repos[repo] = {
+                            url: '',  // Will be populated on next repos refresh
+                            'display-name': repo,
+                        };
+                        _this.didLoadRepos.raise(_this, _this.repos);
+                    }
                 }
 
                 console.log('[Model] Filtered results:', results.length, 'repos');
@@ -1080,9 +1090,10 @@ var App = React.createClass({
         });
 
         Model.didSearch.tap(function (model, results, stats) {
+            console.log('[App] didSearch triggered with', results.length, 'results');
             _this.refs.searchBar.setState({
                 stats: stats,
-                repos: repos,
+                repos: _this.state.repos || [],
             });
 
             _this.refs.resultView.setState({
