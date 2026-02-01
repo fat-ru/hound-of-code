@@ -96,6 +96,47 @@ You should be able to navigate to [http://localhost:6080/](http://localhost:6080
   docker stop hound
   ```
 
+#### SQLite操作
+
+1.进入数据库
+
+```
+cd hound/db
+sqlite3 hound.db
+```
+
+2.查看全部表名
+```
+.tables
+```
+
+
+3.查看用户数据
+
+```
+SELECT * FROM users;
+```
+
+4.查看仓库数据
+```
+SELECT * FROM repo_configs;
+```
+
+#### JWT认证
+
+1.JWT Secret 的使用优先级：
+
+|优先级|来源|说明|
+|----|----|----|
+|1|config.json文件配置jwt-secret|推荐，持久化存储|
+|2|环境变量 HOUND_JWT_SECRET|可覆盖配置文件|
+|3|随机生成|默认，每次重启变化|
+
+2.随机密钥生成方式
+```
+openssl rand -hex 32
+```
+
 ## Running in Production
 
 There are no special flags to run Hound in production. You can use the `--addr=:6880` flag to control the port to which the server binds. 

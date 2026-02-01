@@ -29,6 +29,8 @@ type Claims struct {
 }
 
 // InitAuth initializes the auth module
+// If secret is empty, generates a random secret and logs a warning
+// SetJwtSecret can be called later to set a fixed secret from config
 func InitAuth(secret string) error {
 	if secret == "" {
 		// Generate a random secret if not provided
@@ -41,6 +43,14 @@ func InitAuth(secret string) error {
 		jwtSecret = []byte(secret)
 	}
 	return nil
+}
+
+// SetJwtSecret sets the JWT secret from config file
+// This allows the secret to persist across restarts
+func SetJwtSecret(secret string) {
+	if secret != "" {
+		jwtSecret = []byte(secret)
+	}
 }
 
 // SetJWTSecret sets the JWT secret directly

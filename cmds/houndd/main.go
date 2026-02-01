@@ -158,12 +158,28 @@ func main() {
 	info_log.Printf("Database initialized at %s", dbPath)
 
 	// Initialize authentication
-	// Use HOUND_JWT_SECRET environment variable if set, otherwise generate one
-	jwtSecret := os.Getenv("HOUND_JWT_SECRET")
+	// Priority: 1. Config file, 2. Environment variable, 3. Random generate
+	jwtSecret := ""
+	if cfg.JwtSecret != "" {
+		jwtSecret = cfg.JwtSecret
+		info_log.Println("Using JWT secret from config file")
+	}
 	if jwtSecret == "" {
-		info_log.Println("WARNING: HOUND_JWT_SECRET not set, users will need to re-login after restart")
+		jwtSecret = os.Getenv("HOUND_JWT_SECRET")
+		if jwtSecret != "" {
+			info_log.Println("Using JWT secret from environment variable")
+		}
+	}
+	if jwtSecret == "" {
+		info_log.Println("WARNING: JWT secret not set, using random secret - users will need to re-login after each restart")
 	}
 	auth.InitAuth(jwtSecret)
+
+	// If config file has a JWT secret, set it explicitly (overrides random generation)
+	// This must be done after InitAuth to ensure persistence
+	if cfg.JwtSecret != "" {
+		auth.SetJwtSecret(cfg.JwtSecret)
+	}
 	info_log.Println("Authentication initialized")
 
 	// Start the web server on a background routine.
