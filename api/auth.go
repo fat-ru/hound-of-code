@@ -134,23 +134,31 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleLogin(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[LOGIN] Request from %s", r.RemoteAddr)
+
 	if r.Method != http.MethodPost {
+		log.Println("[LOGIN] Method not allowed")
 		writeError(w, errors.New("method not allowed"), http.StatusMethodNotAllowed)
 		return
 	}
 
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("[LOGIN] Invalid request body: %v", err)
 		writeError(w, errors.New("invalid request body"), http.StatusBadRequest)
 		return
 	}
 
+	log.Printf("[LOGIN] Login attempt for username: %s", req.Username)
+
 	// Validate input
 	if strings.TrimSpace(req.Username) == "" {
+		log.Println("[LOGIN] Username is empty")
 		writeError(w, errors.New("username is required"), http.StatusBadRequest)
 		return
 	}
 	if strings.TrimSpace(req.Password) == "" {
+		log.Println("[LOGIN] Password is empty")
 		writeError(w, errors.New("password is required"), http.StatusBadRequest)
 		return
 	}
@@ -158,26 +166,36 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	// Get user
 	user, err := data.GetUserByUsername(req.Username)
 	if err != nil {
+		log.Printf("[LOGIN] Database error: %v", err)
 		writeError(w, err, http.StatusInternalServerError)
 		return
 	}
 	if user == nil {
+		log.Printf("[LOGIN] User not found: %s", req.Username)
 		writeError(w, errors.New("invalid username or password"), http.StatusUnauthorized)
 		return
 	}
 
+	log.Printf("[LOGIN] User found, checking password for user ID: %d", user.ID)
+
 	// Check password
 	if !auth.CheckPassword(req.Password, user.PasswordHash) {
+		log.Printf("[LOGIN] Password mismatch for user: %s", req.Username)
 		writeError(w, errors.New("invalid username or password"), http.StatusUnauthorized)
 		return
 	}
+
+	log.Printf("[LOGIN] Password match, generating token for user: %s", req.Username)
 
 	// Generate token
 	token, err := auth.GenerateToken(user)
 	if err != nil {
+		log.Printf("[LOGIN] Token generation error: %v", err)
 		writeError(w, err, http.StatusInternalServerError)
 		return
 	}
+
+	log.Printf("[LOGIN] Login successful for user: %s, token length: %d", req.Username, len(token))
 
 	writeResp(w, &AuthResponse{
 		Token: token,
