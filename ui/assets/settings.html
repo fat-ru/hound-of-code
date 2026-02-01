@@ -52,18 +52,18 @@
         }
 
         var user = Auth.getUser();
-        var isAdmin = user && user.role === 'admin';
+        var isOwner = user && user.role === 'owner';
         console.log('[Settings] User:', user);
-        console.log('[Settings] IsAdmin:', isAdmin);
+        console.log('[Settings] IsOwner:', isOwner);
 
         // Show/hide user settings based on role
-        if (isAdmin) {
+        if (isOwner) {
             navUsers.style.display = 'inline-block';
         }
 
         // Set active nav based on URL hash or default to repos
         var hash = window.location.hash;
-        if (hash === '#users' && isAdmin) {
+        if (hash === '#users' && isOwner) {
             navRepos.classList.remove('active');
             navUsers.classList.add('active');
             loadUserSettings();
@@ -106,8 +106,8 @@
 
         // Load user settings
         function loadUserSettings() {
-            if (!isAdmin) {
-                contentDiv.innerHTML = '<div class="error">Access denied. Admin privileges required.</div>';
+            if (!isOwner) {
+                contentDiv.innerHTML = '<div class="error">Access denied. Owner privileges required.</div>';
                 return;
             }
             contentDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading...</p></div>';

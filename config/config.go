@@ -228,3 +228,20 @@ func (c *Config) ToJsonString() (string, error) {
 
 	return string(b), nil
 }
+
+// SaveToFile saves the config to a file
+func (c *Config) SaveToFile(filename string) error {
+	w, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer w.Close()
+
+	encoder := json.NewEncoder(w)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(c); err != nil {
+		return err
+	}
+
+	return nil
+}

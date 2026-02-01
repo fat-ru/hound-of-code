@@ -15,8 +15,10 @@ import (
 )
 
 const (
-	RoleAdmin = "admin"
-	RoleUser  = "user"
+	RoleOwner  = "owner"
+	RoleAdmin  = "admin"
+	RoleMember = "member"
+	RoleUser   = "user" // 保留兼容性
 )
 
 var jwtSecret []byte

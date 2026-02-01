@@ -103,15 +103,15 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if this is the first user (becomes admin)
-	role := auth.RoleUser
+	// Check if this is the first user (becomes owner)
+	role := auth.RoleMember
 	userCount, err := data.UserCount()
 	if err != nil {
 		writeError(w, err, http.StatusInternalServerError)
 		return
 	}
 	if userCount == 0 {
-		role = auth.RoleAdmin
+		role = auth.RoleOwner
 	}
 
 	// Create user

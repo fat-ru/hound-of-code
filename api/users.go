@@ -129,7 +129,7 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate role
-	if req.Role != "" && req.Role != auth.RoleAdmin && req.Role != auth.RoleUser {
+	if req.Role != "" && req.Role != auth.RoleAdmin && req.Role != auth.RoleMember {
 		writeError(w, errors.New("invalid role"), http.StatusBadRequest)
 		return
 	}
@@ -154,7 +154,7 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	role := req.Role
 	if role == "" {
-		role = auth.RoleUser
+		role = auth.RoleMember
 	}
 
 	// Create user
@@ -199,7 +199,7 @@ func HandleUpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate role
-	if req.Role != "" && req.Role != auth.RoleAdmin && req.Role != auth.RoleUser {
+	if req.Role != "" && req.Role != auth.RoleAdmin && req.Role != auth.RoleMember {
 		writeError(w, errors.New("invalid role"), http.StatusBadRequest)
 		return
 	}

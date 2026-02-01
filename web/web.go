@@ -87,10 +87,10 @@ func (s *Server) ServeWithIndex(idx map[string]*searcher.Searcher) error {
 	// Protected routes with auth middleware
 	protectedMux := http.NewServeMux()
 	protectedMux.HandleFunc("/api/v1/users", func(w http.ResponseWriter, r *http.Request) {
-		// Check if user is admin
+		// Check if user is owner
 		user := getCurrentUser(r.Context())
-		if user == nil || user.Role != auth.RoleAdmin {
-			http.Error(w, "Admin access required", http.StatusForbidden)
+		if user == nil || user.Role != auth.RoleOwner {
+			http.Error(w, "Owner access required", http.StatusForbidden)
 			return
 		}
 
@@ -105,10 +105,10 @@ func (s *Server) ServeWithIndex(idx map[string]*searcher.Searcher) error {
 	})
 
 	protectedMux.HandleFunc("/api/v1/users/", func(w http.ResponseWriter, r *http.Request) {
-		// Check if user is admin
+		// Check if user is owner
 		user := getCurrentUser(r.Context())
-		if user == nil || user.Role != auth.RoleAdmin {
-			http.Error(w, "Admin access required", http.StatusForbidden)
+		if user == nil || user.Role != auth.RoleOwner {
+			http.Error(w, "Owner access required", http.StatusForbidden)
 			return
 		}
 

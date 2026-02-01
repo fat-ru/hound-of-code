@@ -4,10 +4,40 @@
 var RepoSettings = (function() {
     var container;
     var repos = [];
+    var user = null;
 
     function init(el) {
         container = el;
         loadRepos();
+    }
+
+    function getCurrentUser() {
+        if (!user) {
+            user = Auth.getUser();
+        }
+        return user;
+    }
+
+    function canAddRepo() {
+        user = getCurrentUser();
+        if (!user) return false;
+        return user.role === 'owner' || user.role === 'admin';
+    }
+
+    function canEditRepo(repo) {
+        user = getCurrentUser();
+        if (!user) return false;
+        if (user.role === 'owner') return true; // owner can edit any repo
+        if (user.role === 'admin') return repo.userId === user.id; // admin can only edit own repos
+        return false; // member cannot edit
+    }
+
+    function canDeleteRepo(repo) {
+        user = getCurrentUser();
+        if (!user) return false;
+        if (user.role === 'owner') return true; // owner can delete any repo
+        if (user.role === 'admin') return repo.userId === user.id; // admin can only delete own repos
+        return false; // member cannot delete
     }
 
     function loadRepos() {
@@ -24,13 +54,20 @@ var RepoSettings = (function() {
     }
 
     function render() {
+        var user = getCurrentUser();
+        var canAdd = canAddRepo();
+
         var html = [
             '<div class="toolbar">',
             '  <div class="search-box">',
             '    <input type="text" id="repoSearch" placeholder="Search repositories...">',
-            '  </div>',
-            '  <button class="btn-primary" id="addRepoBtn">Add Repository</button>',
-            '</div>',
+            '  </div>'
+        ];
+        if (canAdd) {
+            html.push('  <button class="btn-primary" id="addRepoBtn">Add Repository</button>');
+        }
+        html.push('</div>');
+        html.push(
             '<table class="data-table">',
             '  <thead>',
             '    <tr>',
@@ -45,7 +82,9 @@ var RepoSettings = (function() {
             '  <tbody id="repoList"></tbody>',
             '</table>',
             '<div id="repoModal"></div>'
-        ].join('\n');
+        );
+
+        container.innerHTML = html.join('\n');
 
         container.innerHTML = html;
 
@@ -54,24 +93,36 @@ var RepoSettings = (function() {
             tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No repositories configured. Click "Add Repository" to add one.</td></tr>';
         } else {
             tbody.innerHTML = repos.map(function(repo) {
+                var canEdit = canEditRepo(repo);
+                var canDelete = canDeleteRepo(repo);
+                var actionsHtml = '';
+                if (canEdit) {
+                    actionsHtml += '  <button class="btn-edit" data-id="' + repo.id + '">Edit</button>';
+                }
+                if (canDelete) {
+                    actionsHtml += '  <button class="btn-delete" data-id="' + repo.id + '">Delete</button>';
+                }
+                if (!actionsHtml) {
+                    actionsHtml = '<span style="color: #888;">-</span>';
+                }
                 return '<tr>' +
                     '<td>' + escapeHtml(repo.name) + '</td>' +
                     '<td>' + escapeHtml(repo.url) + '</td>' +
                     '<td>' + escapeHtml(repo.branch) + '</td>' +
                     '<td>' + escapeHtml(repo.vcsType || 'git') + '</td>' +
                     '<td><span class="badge ' + (repo.enabled ? 'badge-success' : 'badge-warning') + '">' + (repo.enabled ? 'Enabled' : 'Disabled') + '</span></td>' +
-                    '<td class="actions">' +
-                    '  <button class="btn-edit" data-id="' + repo.id + '">Edit</button>' +
-                    '  <button class="btn-delete" data-id="' + repo.id + '">Delete</button>' +
-                    '</td>' +
+                    '<td class="actions">' + actionsHtml + '</td>' +
                     '</tr>';
             }).join('');
         }
 
         // Event listeners
-        document.getElementById('addRepoBtn').addEventListener('click', function() {
-            showRepoModal();
-        });
+        var addRepoBtn = document.getElementById('addRepoBtn');
+        if (addRepoBtn) {
+            addRepoBtn.addEventListener('click', function() {
+                showRepoModal();
+            });
+        }
 
         document.getElementById('repoSearch').addEventListener('input', function(e) {
             filterRepos(e.target.value);
@@ -106,16 +157,25 @@ var RepoSettings = (function() {
             tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No matching repositories</td></tr>';
         } else {
             tbody.innerHTML = filtered.map(function(repo) {
+                var canEdit = canEditRepo(repo);
+                var canDelete = canDeleteRepo(repo);
+                var actionsHtml = '';
+                if (canEdit) {
+                    actionsHtml += '  <button class="btn-edit" data-id="' + repo.id + '">Edit</button>';
+                }
+                if (canDelete) {
+                    actionsHtml += '  <button class="btn-delete" data-id="' + repo.id + '">Delete</button>';
+                }
+                if (!actionsHtml) {
+                    actionsHtml = '<span style="color: #888;">-</span>';
+                }
                 return '<tr>' +
                     '<td>' + escapeHtml(repo.name) + '</td>' +
                     '<td>' + escapeHtml(repo.url) + '</td>' +
                     '<td>' + escapeHtml(repo.branch) + '</td>' +
                     '<td>' + escapeHtml(repo.vcsType || 'git') + '</td>' +
                     '<td><span class="badge ' + (repo.enabled ? 'badge-success' : 'badge-warning') + '">' + (repo.enabled ? 'Enabled' : 'Disabled') + '</span></td>' +
-                    '<td class="actions">' +
-                    '  <button class="btn-edit" data-id="' + repo.id + '">Edit</button>' +
-                    '  <button class="btn-delete" data-id="' + repo.id + '">Delete</button>' +
-                    '</td>' +
+                    '<td class="actions">' + actionsHtml + '</td>' +
                     '</tr>';
             }).join('');
         }

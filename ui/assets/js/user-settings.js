@@ -58,10 +58,13 @@ var UserSettings = (function() {
             tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No users found</td></tr>';
         } else {
             tbody.innerHTML = users.map(function(user) {
+                var badgeClass = 'badge-success';
+                if (user.role === 'owner') badgeClass = 'badge-danger';
+                else if (user.role === 'admin') badgeClass = 'badge-info';
                 return '<tr>' +
                     '<td>' + user.id + '</td>' +
                     '<td>' + escapeHtml(user.username) + '</td>' +
-                    '<td><span class="badge ' + (user.role === 'admin' ? 'badge-info' : 'badge-success') + '">' + escapeHtml(user.role) + '</span></td>' +
+                    '<td><span class="badge ' + badgeClass + '">' + escapeHtml(user.role) + '</span></td>' +
                     '<td>' + formatDate(user.createdAt) + '</td>' +
                     '<td class="actions">' +
                     '  <button class="btn-edit" data-id="' + user.id + '">Edit</button>' +
@@ -109,10 +112,13 @@ var UserSettings = (function() {
             tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No matching users</td></tr>';
         } else {
             tbody.innerHTML = filtered.map(function(user) {
+                var badgeClass = 'badge-success';
+                if (user.role === 'owner') badgeClass = 'badge-danger';
+                else if (user.role === 'admin') badgeClass = 'badge-info';
                 return '<tr>' +
                     '<td>' + user.id + '</td>' +
                     '<td>' + escapeHtml(user.username) + '</td>' +
-                    '<td><span class="badge ' + (user.role === 'admin' ? 'badge-info' : 'badge-success') + '">' + escapeHtml(user.role) + '</span></td>' +
+                    '<td><span class="badge ' + badgeClass + '">' + escapeHtml(user.role) + '</span></td>' +
                     '<td>' + formatDate(user.createdAt) + '</td>' +
                     '<td class="actions">' +
                     '  <button class="btn-edit" data-id="' + user.id + '">Edit</button>' +
@@ -143,7 +149,7 @@ var UserSettings = (function() {
             '      <div class="form-group">',
             '        <label for="role">Role</label>',
             '        <select id="role" name="role">',
-            '          <option value="user"' + (user && user.role === 'user' ? ' selected' : '') + '>User</option>',
+            '          <option value="member"' + (user && user.role === 'member' ? ' selected' : '') + '>Member</option>',
             '          <option value="admin"' + (user && user.role === 'admin' ? ' selected' : '') + '>Admin</option>',
             '        </select>',
             '      </div>',
