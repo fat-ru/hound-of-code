@@ -81,11 +81,18 @@ func CheckPassword(password, hash string) bool {
 		return false
 	}
 
-	salt, storedHash := parts[0], parts[1]
-	computedHash := base64.StdEncoding.EncodeToString([]byte(password + salt))
+	saltStr, storedHash := parts[0], parts[1]
+	// Decode the base64 salt back to bytes
+	saltBytes, err := base64.StdEncoding.DecodeString(saltStr)
+	if err != nil {
+		log.Printf("[PASSWORD] Failed to decode salt: %v", err)
+		return false
+	}
+	// Use the decoded salt bytes for hashing
+	computedHash := base64.StdEncoding.EncodeToString([]byte(password + string(saltBytes)))
 	match := computedHash == storedHash
-	log.Printf("[PASSWORD] Password check - Salt: %d chars, Computed hash: %s..., Stored hash: %s..., Match: %v",
-		len(salt), storedHash[:20]+"...", computedHash[:20]+"...", match)
+	log.Printf("[PASSWORD] Password check - Salt: %d bytes, Computed hash: %s..., Stored hash: %s..., Match: %v",
+		len(saltBytes), storedHash[:20]+"...", computedHash[:20]+"...", match)
 	return match
 }
 
