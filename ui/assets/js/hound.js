@@ -304,8 +304,12 @@ var Model = {
           return info['display-name'];
         }
 
-        var url = info.url,
-            ax = url.lastIndexOf("/");
+        var url = info.url;
+        if (!url) {
+            return repo;
+        }
+
+        var ax = url.lastIndexOf("/");
         if (ax < 0) {
             return repo;
         }

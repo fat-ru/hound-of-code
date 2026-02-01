@@ -3,7 +3,9 @@
     "allow": [
       "Bash(npm run build)",
       "mcp__ide__getDiagnostics",
-      "Bash(go build ./...)"
+      "Bash(go build ./...)",
+      "Bash(npx webpack:*)",
+      "Bash(npm install)"
     ]
   }
 }
