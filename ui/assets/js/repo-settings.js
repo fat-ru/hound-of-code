@@ -86,8 +86,6 @@ var RepoSettings = (function() {
 
         container.innerHTML = html.join('\n');
 
-        container.innerHTML = html;
-
         var tbody = document.getElementById('repoList');
         if (repos.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No repositories configured. Click "Add Repository" to add one.</td></tr>';

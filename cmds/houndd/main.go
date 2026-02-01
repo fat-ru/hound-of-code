@@ -157,6 +157,15 @@ func main() {
 	defer data.CloseDB()
 	info_log.Printf("Database initialized at %s", dbPath)
 
+	// Import repos from config.json into database
+	if len(cfg.Repos) > 0 {
+		if err := data.ImportConfigRepos(cfg.Repos); err != nil {
+			info_log.Printf("Warning: failed to import repos from config: %v", err)
+		} else {
+			info_log.Printf("Imported %d repos from config.json", len(cfg.Repos))
+		}
+	}
+
 	// Initialize authentication
 	// Priority: 1. Config file, 2. Environment variable, 3. Random generate
 	jwtSecret := ""
