@@ -19,7 +19,13 @@
       "Bash(sqlite3:*)",
       "Bash(git checkout:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(go vet:*)",
+      "Bash(set GOPROXY=https://goproxy.cn,direct:*)",
+      "Bash(go env GOPROXY:*)",
+      "Bash(go env GOMODULECACHE)",
+      "Bash(set GOPROXY=https://goproxy.cn)",
+      "Bash(go env:*)"
     ]
   }
 }
