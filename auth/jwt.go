@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -20,7 +21,7 @@ const (
 
 var jwtSecret []byte
 
-// Claims represents the JWT claims
+// Claims represents JWT claims
 type Claims struct {
 	UserID   int64  `json:"userId"`
 	Username string `json:"username"`
@@ -72,16 +73,20 @@ func HashPassword(password string) (string, error) {
 	return fmt.Sprintf("%s:%s", base64.StdEncoding.EncodeToString(salt), hash), nil
 }
 
-// CheckPassword checks if the password matches the hash
+// CheckPassword checks if a password matches the hash
 func CheckPassword(password, hash string) bool {
 	parts := strings.Split(hash, ":")
 	if len(parts) != 2 {
+		log.Printf("[PASSWORD] Invalid hash format (expected salt:hash): %s", hash)
 		return false
 	}
 
 	salt, storedHash := parts[0], parts[1]
 	computedHash := base64.StdEncoding.EncodeToString([]byte(password + salt))
-	return computedHash == storedHash
+	match := computedHash == storedHash
+	log.Printf("[PASSWORD] Password check - Salt: %d chars, Computed hash: %s..., Stored hash: %s..., Match: %v",
+		len(salt), storedHash[:20]+"...", computedHash[:20]+"...", match)
+	return match
 }
 
 // GenerateToken generates a JWT token for a user
@@ -93,7 +98,7 @@ func GenerateToken(user *data.User) (string, error) {
 		Role:     user.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(now.Add(24 * time.Hour)),
-			IssuedAt:  jwt.NewNumericDate(now),
+			IssuedAt: jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),
 			Issuer:    "hound",
 			Subject:   fmt.Sprintf("%d", user.ID),
