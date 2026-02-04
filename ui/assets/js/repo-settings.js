@@ -113,34 +113,30 @@ var RepoSettings = (function() {
                     '</tr>';
             }).join('');
         }
+    }
 
-        // Event listeners
-        var addRepoBtn = document.getElementById('addRepoBtn');
-        if (addRepoBtn) {
-            addRepoBtn.addEventListener('click', function() {
-                showRepoModal();
+    // Use event delegation for edit and delete buttons (handles dynamically added buttons)
+    function setupEventListeners() {
+        // Use event delegation on container for edit/delete buttons
+        var searchInput = document.getElementById('repoSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                filterRepos(e.target.value);
             });
         }
 
-        document.getElementById('repoSearch').addEventListener('input', function(e) {
-            filterRepos(e.target.value);
-        });
-
-        tbody.querySelectorAll('.btn-edit').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var id = parseInt(this.getAttribute('data-id'));
+        container.addEventListener('click', function(e) {
+            var target = e.target;
+            if (target.classList.contains('btn-edit')) {
+                var id = parseInt(target.getAttribute('data-id'));
                 var repo = repos.find(function(r) { return r.id === id; });
                 if (repo) showRepoModal(repo);
-            });
-        });
-
-        tbody.querySelectorAll('.btn-delete').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var id = parseInt(this.getAttribute('data-id'));
+            } else if (target.classList.contains('btn-delete')) {
+                var id = parseInt(target.getAttribute('data-id'));
                 if (confirm('Are you sure you want to delete this repository configuration?')) {
                     deleteRepo(id);
                 }
-            });
+            }
         });
     }
 
@@ -177,6 +173,9 @@ var RepoSettings = (function() {
                     '</tr>';
             }).join('');
         }
+
+        // Set up event listeners after rendering
+        setupEventListeners();
     }
 
     function showRepoModal(repo) {
@@ -218,7 +217,6 @@ var RepoSettings = (function() {
             '          <input type="checkbox" id="enabled" name="enabled"' + (repo && !repo.enabled ? '' : ' checked') + '>',
             '          <label for="enabled">Enabled</label>',
             '        </div>',
-            '      </div>',
             '      <div class="modal-footer">',
             '        <button type="button" class="btn-cancel" id="cancelRepoBtn">Cancel</button>',
             '        <button type="submit" class="btn-primary">' + (isEdit ? 'Update' : 'Create') + '</button>',

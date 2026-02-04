@@ -10,32 +10,16 @@ var UserSettings = (function() {
         loadUsers();
     }
 
-    function loadUsers() {
-        container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading users...</p></div>';
-
-        Auth.getUsers()
-            .then(function(response) {
-                users = response.users || [];
-                render();
-            })
-            .catch(function(err) {
-                // Check if it's a permission error
-                if (err.message && (err.message.includes('Admin access required') || err.message.includes('403') || err.message.includes('forbidden'))) {
-                    container.innerHTML = '<div class="error">Access Denied. Admin privileges required to manage users.</div>';
-                } else {
-                    container.innerHTML = '<div class="error">Failed to load users: ' + (err.message || 'Unknown error') + '</div>';
-                }
-            });
-    }
-
     function render() {
         var html = [
             '<div class="toolbar">',
             '  <div class="search-box">',
             '    <input type="text" id="userSearch" placeholder="Search users...">',
-            '  </div>',
-            '  <button class="btn-primary" id="addUserBtn">Add User</button>',
-            '</div>',
+            '  </div>'
+        ];
+        html.push('  <button class="btn-primary" id="addUserBtn">Add User</button>');
+        html.push('</div>');
+        html.push(
             '<table class="data-table">',
             '  <thead>',
             '    <tr>',
@@ -49,11 +33,11 @@ var UserSettings = (function() {
             '  <tbody id="userList"></tbody>',
             '</table>',
             '<div id="userModal"></div>'
-        ].join('\n');
+        );
 
-        container.innerHTML = html;
-
+        container.innerHTML = html.join('\n');
         var tbody = document.getElementById('userList');
+
         if (users.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No users found</td></tr>';
         } else {
@@ -74,30 +58,35 @@ var UserSettings = (function() {
             }).join('');
         }
 
-        // Event listeners
+        // Set up event listeners using event delegation
+        setupEventListeners();
+    }
+
+    function setupEventListeners() {
         document.getElementById('addUserBtn').addEventListener('click', function() {
             showUserModal();
         });
 
-        document.getElementById('userSearch').addEventListener('input', function(e) {
-            filterUsers(e.target.value);
-        });
+        var searchInput = document.getElementById('userSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                filterUsers(e.target.value);
+            });
+        }
 
-        tbody.querySelectorAll('.btn-edit').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var id = parseInt(this.getAttribute('data-id'));
+        // Use event delegation on container for edit/delete buttons
+        container.addEventListener('click', function(e) {
+            var target = e.target;
+            if (target.classList.contains('btn-edit')) {
+                var id = parseInt(target.getAttribute('data-id'));
                 var user = users.find(function(u) { return u.id === id; });
                 if (user) showUserModal(user);
-            });
-        });
-
-        tbody.querySelectorAll('.btn-delete').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var id = parseInt(this.getAttribute('data-id'));
+            } else if (target.classList.contains('btn-delete')) {
+                var id = parseInt(target.getAttribute('data-id'));
                 if (confirm('Are you sure you want to delete this user?')) {
                     deleteUser(id);
                 }
-            });
+            }
         });
     }
 
