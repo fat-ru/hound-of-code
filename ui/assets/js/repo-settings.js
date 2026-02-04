@@ -113,29 +113,50 @@ var RepoSettings = (function() {
                     '</tr>';
             }).join('');
         }
+
+        // Set up event listeners after rendering
+        console.log('[RepoSettings] Rendering complete, setting up event delegation');
+        setupEventListeners();
     }
 
     // Use event delegation for edit and delete buttons (handles dynamically added buttons)
     function setupEventListeners() {
+        console.log('[RepoSettings] Setting up event delegation');
+
         // Use event delegation on container for edit/delete buttons
         var searchInput = document.getElementById('repoSearch');
         if (searchInput) {
+            console.log('[RepoSettings] Found repoSearch input, adding input listener');
             searchInput.addEventListener('input', function(e) {
+                console.log('[RepoSettings] Search input changed, filtering repos');
                 filterRepos(e.target.value);
             });
         }
 
+        // Use event delegation on container for edit/delete buttons
+        console.log('[RepoSettings] Adding click listener to container');
         container.addEventListener('click', function(e) {
             var target = e.target;
-            if (target.classList.contains('btn-edit')) {
+            console.log('[RepoSettings] Container click detected, target:', target);
+            if (target && target.classList && target.classList.contains('btn-edit')) {
+                console.log('[RepoSettings] Edit button clicked, data-id:', target.getAttribute('data-id'));
                 var id = parseInt(target.getAttribute('data-id'));
                 var repo = repos.find(function(r) { return r.id === id; });
-                if (repo) showRepoModal(repo);
-            } else if (target.classList.contains('btn-delete')) {
+                console.log('[RepoSettings] Found repo for id:', id, repo);
+                if (repo) {
+                    console.log('[RepoSettings] Calling showRepoModal');
+                    showRepoModal(repo);
+                } else {
+                    console.log('[RepoSettings] Repo not found for id:', id);
+                }
+            } else if (target && target.classList && target.classList.contains('btn-delete')) {
+                console.log('[RepoSettings] Delete button clicked, data-id:', target.getAttribute('data-id'));
                 var id = parseInt(target.getAttribute('data-id'));
                 if (confirm('Are you sure you want to delete this repository configuration?')) {
                     deleteRepo(id);
                 }
+            } else {
+                console.log('[RepoSettings] Click on container but not on edit or delete button');
             }
         });
     }
@@ -175,6 +196,7 @@ var RepoSettings = (function() {
         }
 
         // Set up event listeners after rendering
+        console.log('[RepoSettings] Filtering complete, re-setting up event delegation');
         setupEventListeners();
     }
 
@@ -216,7 +238,8 @@ var RepoSettings = (function() {
             '        <div class="checkbox-group">',
             '          <input type="checkbox" id="enabled" name="enabled"' + (repo && !repo.enabled ? '' : ' checked') + '>',
             '          <label for="enabled">Enabled</label>',
-            '        </div>',
+            '      </div>',
+            '      </div>',
             '      <div class="modal-footer">',
             '        <button type="button" class="btn-cancel" id="cancelRepoBtn">Cancel</button>',
             '        <button type="submit" class="btn-primary">' + (isEdit ? 'Update' : 'Create') + '</button>',
@@ -260,7 +283,7 @@ var RepoSettings = (function() {
                     modalContainer.innerHTML = '';
                     loadRepos();
                     // Refresh the page to update the search index and repo list
-                    // This ensures the new repo is indexed and available for searching
+                    // This ensures that new repo is indexed and available for searching
                     setTimeout(function() {
                         window.location.reload();
                     }, 1000);

@@ -30,12 +30,12 @@ var UserSettings = (function() {
             '      <th>Actions</th>',
             '    </tr>',
             '  </thead>',
-            '  <tbody id="userList"></tbody>',
+            ' <tbody id="userList"></tbody>',
             '</table>',
             '<div id="userModal"></div>'
         );
 
-        container.innerHTML = html.join('\n');
+        container.innerHTML = html;
         var tbody = document.getElementById('userList');
 
         if (users.length === 0) {
@@ -59,33 +59,45 @@ var UserSettings = (function() {
         }
 
         // Set up event listeners using event delegation
+        console.log('[UserSettings] Rendering complete, setting up event delegation');
         setupEventListeners();
     }
 
     function setupEventListeners() {
-        document.getElementById('addUserBtn').addEventListener('click', function() {
-            showUserModal();
-        });
+        console.log('[UserSettings] Setting up event delegation');
 
         var searchInput = document.getElementById('userSearch');
         if (searchInput) {
+            console.log('[UserSettings] Found userSearch input, adding input listener');
             searchInput.addEventListener('input', function(e) {
                 filterUsers(e.target.value);
             });
         }
 
         // Use event delegation on container for edit/delete buttons
+        console.log('[UserSettings] Adding click listener to container');
         container.addEventListener('click', function(e) {
+            console.log('[UserSettings] Container clicked, target:', e.target);
             var target = e.target;
             if (target.classList.contains('btn-edit')) {
+                console.log('[UserSettings] Edit button clicked, id:', target.getAttribute('data-id'));
                 var id = parseInt(target.getAttribute('data-id'));
                 var user = users.find(function(u) { return u.id === id; });
-                if (user) showUserModal(user);
+                console.log('[UserSettings] Found user for id:', id, user);
+                if (user) {
+                    console.log('[UserSettings] Calling showUserModal for user:', user.username);
+                    showUserModal(user);
+                } else {
+                    console.log('[UserSettings] User not found for id:', id);
+                }
             } else if (target.classList.contains('btn-delete')) {
+                console.log('[UserSettings] Delete button clicked, id:', target.getAttribute('data-id'));
                 var id = parseInt(target.getAttribute('data-id'));
                 if (confirm('Are you sure you want to delete this user?')) {
                     deleteUser(id);
                 }
+            } else {
+                console.log('[UserSettings] Clicked on container but not on edit/delete button');
             }
         });
     }
@@ -116,6 +128,8 @@ var UserSettings = (function() {
                     '</tr>';
             }).join('');
         }
+
+        console.log('[UserSettings] Filtered users, count:', filtered.length);
     }
 
     function showUserModal(user) {
