@@ -30,11 +30,9 @@ var UserSettings = (function() {
             '<div class="toolbar">',
             '  <div class="search-box">',
             '    <input type="text" id="userSearch" placeholder="Search users...">',
-            '  </div>'
-        ];
-        html.push('  <button class="btn-primary" id="addUserBtn">Add User</button>');
-        html.push('</div>');
-        html.push(
+            '  </div>',
+            '  <button class="btn-primary" id="addUserBtn">Add User</button>',
+            '</div>',
             '<table class="data-table">',
             '  <thead>',
             '    <tr>',
@@ -45,12 +43,12 @@ var UserSettings = (function() {
             '      <th>Actions</th>',
             '    </tr>',
             '  </thead>',
-            ' <tbody id="userList"></tbody>',
+            '  <tbody id="userList"></tbody>',
             '</table>',
             '<div id="userModal"></div>'
-        );
+        ];
 
-        container.innerHTML = html.join('');
+        container.innerHTML = html.join('\n');
         var tbody = document.getElementById('userList');
 
         if (users.length === 0) {
