@@ -50,7 +50,7 @@ var UserSettings = (function() {
             '<div id="userModal"></div>'
         );
 
-        container.innerHTML = html;
+        container.innerHTML = html.join('');
         var tbody = document.getElementById('userList');
 
         if (users.length === 0) {
