@@ -10,6 +10,21 @@ var UserSettings = (function() {
         loadUsers();
     }
 
+    function loadUsers() {
+        console.log('[UserSettings] Loading users...');
+
+        Auth.getUsers()
+            .then(function(data) {
+                console.log('[UserSettings] Users loaded:', data);
+                users = data.users || data || [];
+                render();
+            })
+            .catch(function(err) {
+                console.error('[UserSettings] Failed to load users:', err);
+                container.innerHTML = '<div class="error">Failed to load users: ' + err.message + '</div>';
+            });
+    }
+
     function render() {
         var html = [
             '<div class="toolbar">',
