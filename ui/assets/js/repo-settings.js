@@ -163,7 +163,8 @@ var RepoSettings = (function() {
 
     function filterRepos(query) {
         var filtered = repos.filter(function(repo) {
-            var searchStr = (repo.name + ' ' + repo.url + ' ' + repo.displayName).toLowerCase();
+            var displayName = repo.displayName || '';
+            var searchStr = (repo.name + ' ' + repo.url + ' ' + displayName).toLowerCase();
             return searchStr.indexOf(query.toLowerCase()) !== -1;
         });
 
