@@ -1,71 +1,59 @@
-/**
- * User Settings Page Module
- */
 var UserSettings = (function() {
     var container;
     var users = [];
-
     function init(el) {
         container = el;
         loadUsers();
     }
-
     function loadUsers() {
-        container.innerHTML = 'Loading...';
+        container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading users...</p></div>';
         Auth.getUsers().then(function(response) {
-            users = response.users || response.repoConfigs || [];
+            users = response.users || [];
             if (!Array.isArray(users)) users = [];
             render();
         }).catch(function(err) {
             container.innerHTML = 'Error: ' + err.message;
         });
     }
-
     function render() {
         container.innerHTML = '';
-        
         var toolbar = document.createElement('div');
         toolbar.className = 'toolbar';
-        
         var searchBox = document.createElement('div');
         searchBox.className = 'search-box';
-        
         var searchInput = document.createElement('input');
         searchInput.type = 'text';
         searchInput.id = 'userSearch';
         searchInput.placeholder = 'Search users...';
         searchBox.appendChild(searchInput);
-        
         toolbar.appendChild(searchBox);
+        var addBtn = document.createElement('button');
+        addBtn.className = 'btn-primary';
+        addBtn.id = 'addUserBtn';
+        addBtn.textContent = 'Add User';
+        toolbar.appendChild(addBtn);
         container.appendChild(toolbar);
-        
         var table = document.createElement('table');
         table.className = 'data-table';
-        
         var thead = document.createElement('thead');
         var headerRow = document.createElement('tr');
-        var headers = ['ID', 'Username', 'Role', 'Created', 'Actions'];
-        for (var i = 0; i < headers.length; i++) {
+        ['ID', 'Username', 'Role', 'Created', 'Actions'].forEach(function(text) {
             var th = document.createElement('th');
-            th.textContent = headers[i];
+            th.textContent = text;
             headerRow.appendChild(th);
-        }
+        });
         thead.appendChild(headerRow);
         table.appendChild(thead);
-        
         var tbody = document.createElement('tbody');
         tbody.id = 'userList';
         table.appendChild(tbody);
         container.appendChild(table);
-        
         var modalDiv = document.createElement('div');
         modalDiv.id = 'userModal';
         container.appendChild(modalDiv);
-        
-        renderUserList();
         setupEventListeners();
+        renderUserList();
     }
-
     function renderUserList() {
         var tbody = document.getElementById('userList');
         tbody.innerHTML = '';
@@ -81,12 +69,10 @@ var UserSettings = (function() {
         for (var i = 0; i < users.length; i++) {
             var user = users[i];
             var tr = document.createElement('tr');
-            tr.innerHTML = '<td>' + (user.id || '') + '</td><td>' + (user.username || user.name || '') + '</td><td>' + (user.role || '') + '</td><td>' + (user.createdAt || user.created || '-') + '</td><td>' +
-                '<button data-id="' + user.id + '">Edit</button> <button data-id="' + user.id + '">Delete</button></td>';
+            tr.innerHTML = '<td>' + (user.id || '') + '</td><td>' + (user.username || user.name || '') + '</td><td>' + (user.role || '') + '</td><td>' + (user.createdAt || user.created || '-') + '</td><td><button data-id="' + user.id + '">Edit</button> <button data-id="' + user.id + '">Delete</button></td>';
             tbody.appendChild(tr);
         }
     }
-
     function setupEventListeners() {
         var s = document.getElementById('userSearch');
         if (s) {
@@ -104,7 +90,6 @@ var UserSettings = (function() {
             }
         });
     }
-
     function filterUsers(q) {
         if (!users || !Array.isArray(users)) return;
         var filtered = [];
@@ -112,22 +97,17 @@ var UserSettings = (function() {
             var u = users[i];
             var username = u.username || u.name || '';
             var role = u.role || '';
-            var searchStr = (username + ' ' + role).toLowerCase();
-            if (searchStr.indexOf(q.toLowerCase()) >= 0) {
+            if (username.toLowerCase().indexOf(q.toLowerCase()) >= 0 || role.toLowerCase().indexOf(q.toLowerCase()) >= 0) {
                 filtered.push(u);
             }
         }
         users = filtered;
         renderUserList();
     }
-
     function deleteUser(id) {
         if (Auth.deleteUser) {
             Auth.deleteUser(id).then(loadUsers);
         }
     }
-
-    return {
-        init: init
-    };
+    return {init: init};
 })();
