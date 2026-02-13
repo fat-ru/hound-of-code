@@ -1,3 +1,6 @@
+/**
+ * User Settings Page Module
+ */
 var UserSettings = (function() {
     var container;
     var users = [];
@@ -8,16 +11,15 @@ var UserSettings = (function() {
     }
 
     function loadUsers() {
-        Auth.getUsers().then(function(data) {
-            if (!data) data = {};
-            if (Array.isArray(data)) {
-                users = data;
-            } else if (Array.isArray(data.users)) {
-                users = data.users;
-            } else {
+        container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading users...</p></div>';
+        Auth.getUsers().then(function(response) {
+            users = response.users || response.repoConfigs || [];
+            if (!Array.isArray(users)) {
                 users = [];
             }
             render();
+        }).catch(function(err) {
+            container.innerHTML = '<div class="error">Failed to load users: ' + err.message + '</div>';
         });
     }
 
@@ -42,13 +44,14 @@ var UserSettings = (function() {
         var table = document.createElement('table');
         table.className = 'data-table';
         var thead = document.createElement('thead');
-        var row = document.createElement('tr');
-        ['ID','Username','Role','Created','Actions'].forEach(function(t) {
+        var headerRow = document.createElement('tr');
+        var headers = ['ID', 'Username', 'Role', 'Created', 'Actions'];
+        for (var i = 0; i < headers.length; i++) {
             var th = document.createElement('th');
-            th.textContent = t;
-            row.appendChild(th);
-        });
-        thead.appendChild(row);
+            th.textContent = headers[i];
+            headerRow.appendChild(th);
+        }
+        thead.appendChild(headerRow);
         table.appendChild(thead);
         var tbody = document.createElement('tbody');
         tbody.id = 'userList';
@@ -64,7 +67,7 @@ var UserSettings = (function() {
     function renderUserList() {
         var tbody = document.getElementById('userList');
         tbody.innerHTML = '';
-        if (users.length) {
+        if (!users.length) {
             var tr = document.createElement('tr');
             var td = document.createElement('td');
             td.colSpan = 5;
@@ -73,7 +76,8 @@ var UserSettings = (function() {
             tbody.appendChild(tr);
             return;
         }
-        users.forEach(function(user) {
+        for (var i = 0; i < users.length; i++) {
+            var user = users[i];
             var tr = document.createElement('tr');
             var idTd = document.createElement('td');
             idTd.textContent = user.id || '';
@@ -98,51 +102,56 @@ var UserSettings = (function() {
             actionsTd.appendChild(deleteBtn);
             tr.appendChild(actionsTd);
             tbody.appendChild(tr);
-        });
+        }
     }
 
     function setupEventListeners() {
         var s = document.getElementById('userSearch');
-        if(s) s.addEventListener('input',function(e){filterUsers(e.target.value)});
-        container.addEventListener('click',function(e){
+        if (s) {
+            s.addEventListener('input', function(e) {
+                filterUsers(e.target.value);
+            });
+        }
+        container.addEventListener('click', function(e) {
             var t = e.target;
-            if(t.tagName==='BUTTON'){
+            if (t && t.tagName === 'BUTTON') {
                 var id = parseInt(t.getAttribute('data-id'));
-                if(t.textContent==='Edit') console.log('Edit',id);
-                if(t.textContent==='Delete' && confirm('Delete?')) deleteUser(id);
-                if(t.textContent==='Add User') showAddUserModal();
+                if (t.textContent === 'Edit') {
+                    console.log('Edit', id);
+                }
+                if (t.textContent === 'Delete' && confirm('Delete this user?')) {
+                    deleteUser(id);
+                }
             }
         });
     }
 
     function filterUsers(q) {
-        users = users.filter(function(u){return u.username.toLowerCase().indexOf(q.toLowerCase())>=0});
+        if (!users || !Array.isArray(users)) {
+            return;
+        }
+        var filtered = [];
+        for (var i = 0; i < users.length; i++) {
+            var u = users[i];
+            var username = u.username || '';
+            var role = u.role || '';
+            if (username.toLowerCase().indexOf(q.toLowerCase()) >= 0 || role.toLowerCase().indexOf(q.toLowerCase()) >= 0) {
+                filtered.push(u);
+            }
+        }
+        users = filtered;
         renderUserList();
     }
 
     function deleteUser(id) {
-        Auth.deleteUser(id).then(loadUsers);
+        if (Auth.deleteUser) {
+            Auth.deleteUser(id).then(function() {
+                loadUsers();
+            });
+        }
     }
 
-    function showAddUserModal() {
-        var modalDiv = document.getElementById('userModal');
-        modalDiv.innerHTML = '';
-        var overlay = document.createElement('div');
-        overlay.className = 'modal-overlay';
-        var modal = document.createElement('div');
-        modal.className = 'modal';
-        var h2 = document.createElement('h2');
-        h2.textContent = 'Add User';
-        modal.appendChild(h2);
-        var closeBtn = document.createElement('button');
-        closeBtn.textContent = 'Close';
-        closeBtn.onclick = function() {
-            modalDiv.innerHTML = '';
-        };
-        modal.appendChild(closeBtn);
-        overlay.appendChild(modal);
-        modalDiv.appendChild(overlay);
-    }
-
-    return {init:init};
+    return {
+        init: init
+    };
 })();
