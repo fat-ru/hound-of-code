@@ -1,17 +1,33 @@
-export function EscapeRegExp(regexp) {
+// Common utility functions for Hound
+
+function EscapeRegExp(regexp) {
     return regexp.replace(/[-[\]{}()*+!<=:?.\/\\^$|#\s,]/g, '\\$&');
 }
 
-export function ExpandVars(template, values) {
+function ExpandVars(template, values) {
     for (var name in values) {
         template = template.replace('{' + name + '}', values[name]);
     }
     return template;
-};
+}
 
-export function UrlParts(repo, path, line, rev) {
-    var url = repo.url.replace(/\.git$/, ''),
-        pattern = repo['url-pattern'],
+function UrlParts(repo, path, line, rev) {
+    // Defensive check: if repo is undefined, return empty object
+    if (!repo) {
+        return {
+            url: '',
+            hostname: '',
+            port: '',
+            project: '',
+            'repo': '',
+            path: '',
+            rev: rev,
+            anchor: ''
+        };
+    }
+
+    var url = repo.url ? repo.url.replace(/\.git$/, '') : '',
+        pattern = repo['url-pattern'] || { anchor: '#L{line}' },
         hostname = '',
         project = '',
         repoName = '',
@@ -61,10 +77,96 @@ export function UrlParts(repo, path, line, rev) {
     };
 }
 
-export function UrlToRepo(repo, path, line, rev) {
+function UrlToRepo(repo, path, line, rev) {
+    // Handle null repo
+    if (!repo) {
+        return '#';
+    }
+
     var urlParts = UrlParts(repo, path, line, rev),
-        pattern = repo['url-pattern']
+        pattern = repo['url-pattern'] || {};
 
     // I'm sure there is a nicer React/jsx way to do this:
-    return ExpandVars(pattern['base-url'], urlParts);
+    return ExpandVars(pattern['base-url'] || '{url}/blob/{rev}/{path}{anchor}', urlParts);
 }
+
+// Export functions to window for both module and non-module scripts
+if (typeof window !== 'undefined') {
+    window.EscapeRegExp = EscapeRegExp;
+    window.ExpandVars = ExpandVars;
+    window.UrlParts = UrlParts;
+    window.UrlToRepo = UrlToRepo;
+}
+
+// Common functions for non-module scripts (settings pages)
+window.Common = {
+    escapeHtml: function(text) {
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    },
+    formatDate: function(dateStr) {
+        if (!dateStr) return '-';
+        try {
+            var date = new Date(dateStr);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        } catch (e) {
+            return dateStr;
+        }
+    }
+};
+
+// Navigation bar setup
+window.initNavBar = function() {
+    var navBar = document.getElementById('navBar');
+    if (!navBar) return;
+
+    var user = Auth.getUser();
+    var isLoggedIn = Auth.isLoggedIn();
+
+    var html = '<div class="top-nav">' +
+        '<a href="/" class="brand">Hound</a>' +
+        '<div class="nav-links">' +
+        '<a href="/">Search</a>' +
+        '<a href="/settings" id="settingsLink">Settings</a>' +
+        '</div>';
+
+    if (isLoggedIn && user) {
+        html += '<div class="user-info">' +
+            '<span class="username">' + Common.escapeHtml(user.username) + '</span> ' +
+            '<span class="role">(' + user.role + ')</span> ' +
+            '<a href="#" id="logoutBtn" style="margin-left: 10px; opacity: 0.8;">Logout</a>' +
+            '</div>';
+    } else {
+        html += '<div class="nav-links">' +
+            '<a href="/login">Login</a>' +
+            '<a href="/register">Register</a>' +
+            '</div>';
+    }
+
+    html += '</div>';
+
+    navBar.innerHTML = html;
+
+    // Settings link handler - redirect to login if not logged in
+    var settingsLink = document.getElementById('settingsLink');
+    if (settingsLink) {
+        settingsLink.addEventListener('click', function(e) {
+            if (!isLoggedIn) {
+                e.preventDefault();
+                window.location.href = '/login';
+            }
+        });
+    }
+
+    // Logout handler
+    var logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            Auth.logout();
+            window.location.href = '/';
+        });
+    }
+};

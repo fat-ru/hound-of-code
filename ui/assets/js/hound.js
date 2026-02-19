@@ -1,4 +1,9 @@
-import { EscapeRegExp, UrlParts, UrlToRepo } from "./common";
+// Use global functions from common.js (loaded via script tag)
+var EscapeRegExp = window.EscapeRegExp;
+var UrlParts = window.UrlParts;
+var ExpandVars = window.ExpandVars;
+var UrlToRepo = window.UrlToRepo;
+
 import { Signal } from "./signal";
 import reqwest from 'reqwest';
 import { merge } from 'merge-anything';
@@ -159,12 +164,41 @@ var Model = {
             return;
         }
 
+        // First, refresh the repos list from the server to include newly added repos
+        var self = this;
+        console.log('[Model] Refreshing repos list before search...');
+        reqwest({
+            url: "api/v1/repos",
+            type: "json",
+            success: function (data) {
+                console.log('[Model] Repos list refreshed:', Object.keys(data));
+                // Update the repos list
+                self.repos = data;
+                self.didLoadRepos.raise(self, self.repos);
+
+                // Now perform the search
+                self.doSearch(params, startedAt);
+            },
+            error: function (xhr, status, err) {
+                console.error('[Model] Failed to refresh repos:', err);
+                // If we can't refresh repos, try searching anyway
+                self.doSearch(params, startedAt);
+            },
+        });
+    },
+
+    doSearch: function (params, startedAt) {
+        var _this = this;
+        console.log('[Model] Starting search for:', params.q);
+
         reqwest({
             url: "api/v1/search",
             data: params,
             type: "json",
             success: function (data) {
+                console.log('[Model] Search response received:', data);
                 if (data.Error) {
+                    console.error('[Model] Search error:', data.Error);
                     _this.didError.raise(_this, data.Error);
                     return;
                 }
@@ -172,11 +206,17 @@ var Model = {
                 var matches = data.Results,
                     stats = data.Stats,
                     results = [];
+                console.log('[Model] Raw matches from server:', Object.keys(matches));
+                console.log('[Model] Current repos list:', Object.keys(_this.repos || {}));
+
                 for (var repo in matches) {
                     if (!matches[repo]) {
                         continue;
                     }
 
+                    // Accept all repos from search results, even if not yet in our repos list
+                    // This handles the case where a newly indexed repo is searched before
+                    // the repos list has been fully refreshed
                     var res = matches[repo];
                     results.push({
                         Repo: repo,
@@ -184,7 +224,22 @@ var Model = {
                         Matches: res.Matches,
                         FilesWithMatch: res.FilesWithMatch,
                     });
+
+                    // Add repo to repos list if not already there (with minimal info)
+                    if (!_this.repos || !_this.repos[repo]) {
+                        console.log('[Model] Adding search result repo to list:', repo);
+                        if (!_this.repos) {
+                            _this.repos = {};
+                        }
+                        _this.repos[repo] = {
+                            url: '',  // Will be populated on next repos refresh
+                            'display-name': repo,
+                        };
+                        _this.didLoadRepos.raise(_this, _this.repos);
+                    }
                 }
+
+                console.log('[Model] Filtered results:', results.length, 'repos');
 
                 results.sort(function (a, b) {
                     return (
@@ -259,8 +314,12 @@ var Model = {
           return info['display-name'];
         }
 
-        var url = info.url,
-            ax = url.lastIndexOf("/");
+        var url = info.url;
+        if (!url) {
+            return repo;
+        }
+
+        var ax = url.lastIndexOf("/");
         if (ax < 0) {
             return repo;
         }
@@ -276,11 +335,28 @@ var Model = {
     },
 
     UrlToRepo: function (repo, path, line, rev) {
-        return UrlToRepo(this.repos[repo], path, line, rev);
+        var repoInfo = this.repos[repo];
+        if (!repoInfo) {
+            return "#";
+        }
+        // Handle null/undefined url-pattern - convert to object if needed
+        var pattern = repoInfo['url-pattern'] || {};
+        if (pattern === null) {
+            pattern = {};
+        }
+        var urlParts = UrlParts(repoInfo, path, line, rev);
+        // Use default pattern if base-url is not defined
+        var baseUrl = pattern['base-url'] || urlParts.url + '/blob/{rev}/{path}{anchor}';
+        return ExpandVars(baseUrl, urlParts);
     },
 
     UrlToRoot: function (repo) {
-        return UrlParts(this.repos[repo]).url;
+        var repoInfo = this.repos[repo];
+        if (!repoInfo) {
+            return "";
+        }
+        var urlParts = UrlParts(repoInfo);
+        return urlParts.url;
     },
 };
 
@@ -1015,9 +1091,10 @@ var App = React.createClass({
         });
 
         Model.didSearch.tap(function (model, results, stats) {
+            console.log('[App] didSearch triggered with', results.length, 'results');
             _this.refs.searchBar.setState({
                 stats: stats,
-                repos: repos,
+                repos: _this.state.repos || [],
             });
 
             _this.refs.resultView.setState({

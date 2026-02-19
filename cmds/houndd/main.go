@@ -16,7 +16,9 @@ import (
 
 	"github.com/blang/semver/v4"
 	"github.com/hound-search/hound/api"
+	"github.com/hound-search/hound/auth"
 	"github.com/hound-search/hound/config"
+	"github.com/hound-search/hound/data"
 	"github.com/hound-search/hound/searcher"
 	"github.com/hound-search/hound/ui"
 	"github.com/hound-search/hound/web"
@@ -111,7 +113,8 @@ func runHttp( //nolint
 	}
 
 	m.Handle("/", h)
-	api.Setup(m, idx, cfg.ResultLimit)
+	api.InitSearcherManager(idx, cfg.DbPath)
+	api.Setup(m, cfg.ResultLimit)
 	return http.ListenAndServe(addr, m)
 }
 
@@ -145,6 +148,53 @@ func main() {
 	if err := cfg.LoadFromFile(*flagConf); err != nil {
 		panic(err)
 	}
+
+	// Initialize database
+	dbPath := filepath.Join(filepath.Dir(*flagConf), "hound.db")
+	if err := data.InitDB(dbPath); err != nil {
+		panic(err)
+	}
+	defer data.CloseDB()
+	info_log.Printf("Database initialized at %s", dbPath)
+
+	// Import repos from config.json into database
+	if len(cfg.Repos) > 0 {
+		if err := data.ImportConfigRepos(cfg.Repos); err != nil {
+			info_log.Printf("Warning: failed to import repos from config: %v", err)
+		} else {
+			info_log.Printf("Imported %d repos from config.json", len(cfg.Repos))
+		}
+	}
+
+	// Initialize authentication
+	// Priority: 1. Config file, 2. Environment variable, 3. Random generate
+	jwtSecret := ""
+	if cfg.JwtSecret != "" {
+		jwtSecret = cfg.JwtSecret
+		info_log.Printf("Using JWT secret from config file (length: %d)", len(jwtSecret))
+	}
+	if jwtSecret == "" {
+		jwtSecret = os.Getenv("HOUND_JWT_SECRET")
+		if jwtSecret != "" {
+			info_log.Println("Using JWT secret from environment variable")
+		}
+	}
+	if jwtSecret == "" {
+		info_log.Println("WARNING: JWT secret not set, using random secret - users will need to re-login after each restart")
+	}
+	auth.InitAuth(jwtSecret)
+	info_log.Printf("After InitAuth, jwtSecret length: %d", len(jwtSecret))
+
+	// If config file has a JWT secret, set it explicitly (overrides random generation)
+	// This must be done after InitAuth to ensure persistence
+	if cfg.JwtSecret != "" {
+		info_log.Printf("Setting JWT secret from config (length: %d)", len(cfg.JwtSecret))
+		auth.SetJwtSecret(cfg.JwtSecret)
+		info_log.Printf("After SetJwtSecret, final jwtSecret length: %d", len(cfg.JwtSecret))
+	} else {
+		info_log.Println("Not overriding: JWT secret is not set in config file")
+	}
+	info_log.Println("Authentication initialized")
 
 	// Start the web server on a background routine.
 	ws := web.Start(&cfg, *flagAddr, *flagDev)

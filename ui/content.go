@@ -61,5 +61,21 @@ func init() {
 			},
 			tplType: "html",
 		},
+
+		// Auth pages (plain HTML files)
+		"/login": &content{
+			template: "login.html",
+			tplType:  "html",
+		},
+
+		"/register": &content{
+			template: "register.html",
+			tplType:  "html",
+		},
+
+		"/settings": &content{
+			template: "settings.html",
+			tplType:  "html",
+		},
 	}
 }

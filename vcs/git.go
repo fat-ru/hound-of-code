@@ -79,10 +79,11 @@ func run(desc, dir, cmd string, args ...string) (string, error) {
 	out, err := c.CombinedOutput()
 	if err != nil {
 		log.Printf(
-			"Failed to %s %v at %q, see output below\n%s: %+v\nContinuing...",
+			"Failed to %s %v at %q, see output below\n%s: %+v",
 			desc,
 			c.Args, c.Dir,
 			out, err)
+		return string(out), err
 	}
 
 	return string(out), nil
