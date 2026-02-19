@@ -110,7 +110,6 @@ sqlite3 hound.db
 .tables
 ```
 
-
 3.查看用户数据
 
 ```
@@ -120,6 +119,11 @@ SELECT * FROM users;
 4.查看仓库数据
 ```
 SELECT * FROM repo_configs;
+```
+
+5.获取用户明文密码
+```
+python3 -c "import base64,sys; h=sys.argv[1]; p=h.split(':'); print(base64.b64decode(p[1])[:-len(base64.b64decode(p[0]))].decode())" "${密文}"
 ```
 
 #### JWT认证
