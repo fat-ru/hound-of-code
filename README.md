@@ -1,5 +1,7 @@
 # Hound
 
+Hound搜索功能测试
+
 [![Build Status](https://travis-ci.org/hound-search/hound.svg?branch=master)](https://travis-ci.org/hound-search/hound)
 [![.github/workflows/go.yaml](https://github.com/hound-search/hound/workflows/.github/workflows/go.yaml/badge.svg)](https://github.com/hound-search/hound/actions)
 
